@@ -2,7 +2,9 @@
 
 Webová appka pre živnostníkov, ktorá eviduje odpracované hodiny a zárobok a orientačne odhadne dane a odvody, všetko v prehliadači a bez registrácie.
 
-> **Živá ukážka:** _(link doplním po nasadení)_
+**Živá ukážka:**
+
+https://ondrod.github.io/zivnost-prehlad/
 
 ## Hlavné funkcie
 
