@@ -1,0 +1,662 @@
+<!DOCTYPE html>
+<html lang="sk">
+<head>
+  <meta charset="UTF-8">
+  <!-- Bez tohto riadku by stránka na mobile vyzerala zmenšená -->
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Živnosť prehľad</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <!-- Ikony (SVG = obrázok zapísaný kódom). Sú tu raz a používajú sa cez <use href="#..."> -->
+  <svg class="ikony" aria-hidden="true">
+    <symbol id="i-domov" viewBox="0 0 24 24"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V21h14V9.5"/></symbol>
+    <symbol id="i-zoznam" viewBox="0 0 24 24"><path d="M8 6h13M8 12h13M8 18h13"/><circle cx="3.5" cy="6" r="1"/><circle cx="3.5" cy="12" r="1"/><circle cx="3.5" cy="18" r="1"/></symbol>
+    <symbol id="i-priecinok" viewBox="0 0 24 24"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></symbol>
+    <symbol id="i-percento" viewBox="0 0 24 24"><path d="M19 5 5 19"/><circle cx="7" cy="7" r="2.5"/><circle cx="17" cy="17" r="2.5"/></symbol>
+    <symbol id="i-nastavenia" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M2 12h3M19 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1"/></symbol>
+    <symbol id="i-ceruzka" viewBox="0 0 24 24"><path d="M4 20h4L19 9l-4-4L4 16z"/><path d="m14 6 4 4"/></symbol>
+    <symbol id="i-kos" viewBox="0 0 24 24"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/></symbol>
+    <symbol id="i-play" viewBox="0 0 24 24"><path d="M7 4.5v15l12-7.5z"/></symbol>
+    <symbol id="i-pauza" viewBox="0 0 24 24"><path d="M8 5v14M16 5v14"/></symbol>
+    <symbol id="i-stop" viewBox="0 0 24 24"><rect x="6" y="6" width="12" height="12" rx="2"/></symbol>
+    <symbol id="i-hodiny" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></symbol>
+    <symbol id="i-euro" viewBox="0 0 24 24"><path d="M17 6.5A7 7 0 1 0 17 17.5"/><path d="M4 10h9M4 14h9"/></symbol>
+    <symbol id="i-kalendar" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></symbol>
+    <symbol id="i-otaznik" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .9-1 1.6v.6M12 17h.01"/></symbol>
+    <symbol id="i-pozor" viewBox="0 0 24 24"><path d="M12 3.5 2.5 20h19z"/><path d="M12 10v4.5M12 17.2h.01"/></symbol>
+    <symbol id="i-zaloha" viewBox="0 0 24 24"><path d="M12 4v11M7.5 10.5 12 15l4.5-4.5"/><path d="M4 17v2a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-2"/></symbol>
+  </svg>
+
+  <!-- Farebné škvrny za "sklom" (iba ozdoba, viditeľné pri zapnutom tekutom skle) -->
+  <div class="sklo-pozadie" aria-hidden="true"><span></span><span></span><span></span></div>
+
+  <div class="appka">
+    <!-- Bočný panel s navigáciou (na počítači). Na mobile je namiesto neho lišta dole. -->
+    <nav class="panel" aria-label="Hlavná navigácia">
+      <div class="logo">Živnosť prehľad<span>hodiny · projekty · odvody</span></div>
+      <button type="button" class="nav-polozka" data-zalozka="prehlad"><svg aria-hidden="true"><use href="#i-domov"/></svg>Prehľad</button>
+      <button type="button" class="nav-polozka" data-zalozka="zaznamy"><svg aria-hidden="true"><use href="#i-zoznam"/></svg>Záznamy</button>
+      <button type="button" class="nav-polozka" data-zalozka="projekty"><svg aria-hidden="true"><use href="#i-priecinok"/></svg>Projekty</button>
+      <button type="button" class="nav-polozka" data-zalozka="dane"><svg aria-hidden="true"><use href="#i-percento"/></svg>Dane a odvody</button>
+      <button type="button" class="nav-polozka" data-zalozka="nastavenia"><svg aria-hidden="true"><use href="#i-nastavenia"/></svg>Nastavenia</button>
+      <!-- Spodok panela: bežiace stopky a nenápadná informácia o poslednej zálohe -->
+      <div class="panel-spodok">
+        <!-- Bežiace stopky (ukáže sa iba vtedy, keď bežia; klik prepne na Prehľad) -->
+        <button type="button" class="panel-stopky" id="panel-stopky" data-zalozka="prehlad" hidden>
+          <span class="bodka" aria-hidden="true"></span><span id="panel-stopky-text"></span>
+        </button>
+        <!-- Posledná záloha (klik otvorí Nastavenia – Záloha dát) -->
+        <button type="button" class="panel-zaloha" id="panel-zaloha" hidden>
+          <svg class="ikona" aria-hidden="true"><use href="#i-zaloha"/></svg><span id="panel-zaloha-text"></span>
+        </button>
+      </div>
+    </nav>
+
+    <main class="obal">
+      <!-- ===== Záložka Prehľad ===== -->
+      <section class="zalozka" data-obsah="prehlad" aria-labelledby="nadpis-prehlad">
+        <div class="hlavicka">
+          <h1 id="nadpis-prehlad">Prehľad</h1>
+          <p class="podnadpis" id="dnesny-den"></p>
+        </div>
+
+        <!-- Dlaždice s číslami za tento mesiac (dopĺňa app.js). Klik prepne na príslušnú záložku. -->
+        <div class="dlazdice">
+          <button type="button" class="dlazdica" id="dlazdica-hodiny" data-zalozka="zaznamy">
+            <span class="dlazdica-popis"><svg class="ikona" aria-hidden="true"><use href="#i-hodiny"/></svg>Odpracované</span>
+            <span class="dlazdica-hodnota" id="prehlad-hodiny">–</span>
+            <span class="dlazdica-pod" id="prehlad-hodiny-pod"></span>
+          </button>
+          <button type="button" class="dlazdica" id="dlazdica-zarobok" data-zalozka="zaznamy">
+            <span class="dlazdica-popis"><svg class="ikona" aria-hidden="true"><use href="#i-euro"/></svg>Zárobok</span>
+            <span class="dlazdica-hodnota" id="prehlad-zarobok">–</span>
+            <span class="dlazdica-pod" id="prehlad-zarobok-pod"></span>
+          </button>
+          <button type="button" class="dlazdica" data-zalozka="dane">
+            <span class="dlazdica-popis"><svg class="ikona" aria-hidden="true"><use href="#i-percento"/></svg><span id="prehlad-odvody-popis">Odvody za mesiac</span></span>
+            <span class="dlazdica-hodnota" id="prehlad-odvody">–</span>
+            <span class="dlazdica-pod" id="prehlad-odvody-pod"></span>
+          </button>
+          <button type="button" class="dlazdica" data-zalozka="dane">
+            <span class="dlazdica-popis"><svg class="ikona" aria-hidden="true"><use href="#i-kalendar"/></svg><span id="prehlad-dan-popis">Daň za rok</span></span>
+            <span class="dlazdica-hodnota" id="prehlad-dan">–</span>
+            <span class="dlazdica-pod" id="prehlad-dan-pod"></span>
+          </button>
+        </div>
+
+        <!-- Bežiace stopky (ukáže sa iba vtedy, keď bežia) -->
+        <div class="stopky" id="stopky" hidden>
+          <p class="stopky-projekt">
+            <span class="bodka" aria-hidden="true"></span><span id="stopky-stav">Beží</span> · <span id="stopky-projekt"></span>
+          </p>
+          <p class="stopky-cas" id="stopky-cas" aria-live="off"></p>
+          <p class="slabsi stopky-info" id="stopky-info"></p>
+          <div class="pole">
+            <label for="stopky-poznamka">Poznámka k záznamu <span class="nepovinne">(nepovinné)</span></label>
+            <input type="text" id="stopky-poznamka" maxlength="100" placeholder="napr. návrh loga, 2. kolo úprav…">
+          </div>
+          <div class="tlacidla-stopiek">
+            <button type="button" class="tlacidlo tlacidlo-druhe" id="stopky-pauza"><svg class="ikona" aria-hidden="true"><use id="stopky-pauza-ikona" href="#i-pauza"/></svg><span id="stopky-pauza-text">Pauza</span></button>
+            <button type="button" class="tlacidlo" id="stopky-stop"><svg class="ikona" aria-hidden="true"><use href="#i-stop"/></svg>Stop a uložiť</button>
+            <button type="button" class="tlacidlo-male nebezpecne" id="stopky-zahodit">Zahodiť</button>
+          </div>
+        </div>
+
+        <!-- Dva stĺpce: vľavo formulár, vpravo rýchly štart stopiek a posledné záznamy -->
+        <div class="prehlad-mriezka">
+        <!-- Formulár na pridanie (alebo úpravu) záznamu -->
+        <section class="karta" id="karta-formulara">
+          <h2 id="nadpis-formulara">Nový záznam</h2>
+          <!-- novalidate: chyby kontrolujeme sami v app.js, aby hlášky boli po slovensky a rovnaké v každom prehliadači -->
+          <form id="formular" novalidate>
+            <!-- Projekt je nepovinný; výber projektu vyplní aj jeho sadzbu -->
+            <div class="pole cela-sirka">
+              <label for="projekt">Projekt <span class="nepovinne">(nepovinné)</span></label>
+              <select id="projekt" name="projekt"></select>
+              <p class="chyba"></p>
+            </div>
+
+            <div class="pole">
+              <label for="datum">Dátum</label>
+              <input type="date" id="datum" name="datum">
+              <p class="chyba" id="chyba-datum"></p>
+            </div>
+
+            <div class="pole">
+              <label for="sadzba">Hodinová sadzba (€)</label>
+              <!-- type="text" + inputmode="decimal": na mobile sa ukáže číselná klávesnica a dá sa písať aj čiarka (30,50) -->
+              <input type="text" id="sadzba" name="sadzba" inputmode="decimal" placeholder="napr. 25">
+              <!-- Tlačidlá s uloženými sadzbami (dopĺňa app.js podľa Nastavení) -->
+              <div class="sadzby-tlacidla" id="sadzby-tlacidla"></div>
+              <p class="chyba" id="chyba-sadzba"></p>
+            </div>
+
+            <!-- Prepínač: zadať čas od – do, alebo rovno počet hodín -->
+            <fieldset class="rezim cela-sirka">
+              <legend>Ako zadáš odpracovaný čas</legend>
+              <div class="rezim-volby">
+                <label class="rezim-volba"><input type="radio" name="rezim" value="cas"> Od – do</label>
+                <label class="rezim-volba"><input type="radio" name="rezim" value="hodiny"> Počet hodín</label>
+              </div>
+            </fieldset>
+
+            <!-- Režim "Od – do". Políčka času HH:MM a panel s výberom ovláda app.js (vyberCasu) -->
+            <div id="blok-cas" class="blok">
+              <div class="pole">
+                <label for="zaciatok">Začiatok</label>
+                <div class="cas-vyber">
+                  <input type="text" id="zaciatok" name="zaciatok" class="cas-pole" inputmode="numeric" autocomplete="off" spellcheck="false" placeholder="--:--">
+                  <button type="button" class="cas-tlacidlo" tabindex="-1" aria-label="Vybrať čas zo zoznamu" title="Vybrať čas" aria-expanded="false"><svg class="ikona" aria-hidden="true"><use href="#i-hodiny"/></svg></button>
+                </div>
+                <p class="chyba" id="chyba-zaciatok"></p>
+              </div>
+
+              <div class="pole">
+                <label for="koniec">Koniec</label>
+                <div class="cas-vyber">
+                  <input type="text" id="koniec" name="koniec" class="cas-pole" inputmode="numeric" autocomplete="off" spellcheck="false" placeholder="--:--">
+                  <button type="button" class="cas-tlacidlo" tabindex="-1" aria-label="Vybrať čas zo zoznamu" title="Vybrať čas" aria-expanded="false"><svg class="ikona" aria-hidden="true"><use href="#i-hodiny"/></svg></button>
+                </div>
+                <p class="chyba" id="chyba-koniec"></p>
+              </div>
+
+              <div class="zaskrtavacie-riadok cela-sirka">
+                <!-- Ak zmeníš dĺžku obeda v app.js (OBED_MINUTY), zmeň aj tento text -->
+                <label class="zaskrtavacie"><input type="checkbox" id="obed"> Obedová prestávka (odráta sa 30 min)</label>
+                <label class="zaskrtavacie"><input type="checkbox" id="prerusenie"> Prerušenie práce (napr. lekár, vybavovanie)</label>
+              </div>
+
+              <!-- Zobrazí sa iba po zaškrtnutí "Prerušenie práce" -->
+              <div id="blok-prerusenie" class="blok" hidden>
+                <!-- Prepínač: prerušenie zadať časom od – do, alebo iba počtom hodín -->
+                <fieldset class="rezim cela-sirka">
+                  <legend>Prerušenie zadám ako</legend>
+                  <div class="rezim-volby">
+                    <label class="rezim-volba"><input type="radio" name="prerusenie-rezim" value="cas" checked> Od – do</label>
+                    <label class="rezim-volba"><input type="radio" name="prerusenie-rezim" value="hodiny"> Počet hodín</label>
+                  </div>
+                </fieldset>
+
+                <div id="blok-prerusenie-cas" class="blok">
+                  <div class="pole">
+                    <label for="prerusenie-od">Prerušenie od</label>
+                    <div class="cas-vyber">
+                      <input type="text" id="prerusenie-od" name="prerusenie-od" class="cas-pole" inputmode="numeric" autocomplete="off" spellcheck="false" placeholder="--:--">
+                      <button type="button" class="cas-tlacidlo" tabindex="-1" aria-label="Vybrať čas zo zoznamu" title="Vybrať čas" aria-expanded="false"><svg class="ikona" aria-hidden="true"><use href="#i-hodiny"/></svg></button>
+                    </div>
+                    <p class="chyba" id="chyba-prerusenieOd"></p>
+                  </div>
+
+                  <div class="pole">
+                    <label for="prerusenie-do">Prerušenie do</label>
+                    <div class="cas-vyber">
+                      <input type="text" id="prerusenie-do" name="prerusenie-do" class="cas-pole" inputmode="numeric" autocomplete="off" spellcheck="false" placeholder="--:--">
+                      <button type="button" class="cas-tlacidlo" tabindex="-1" aria-label="Vybrať čas zo zoznamu" title="Vybrať čas" aria-expanded="false"><svg class="ikona" aria-hidden="true"><use href="#i-hodiny"/></svg></button>
+                    </div>
+                    <p class="chyba" id="chyba-prerusenieDo"></p>
+                  </div>
+                </div>
+
+                <div id="blok-prerusenie-hodiny" class="blok" hidden>
+                  <div class="pole">
+                    <label for="prerusenie-hodiny">Ako dlho</label>
+                    <div class="trvanie cas-vyber">
+                      <input type="text" id="prerusenie-hodiny" name="prerusenie-hodiny" inputmode="numeric" maxlength="2" placeholder="0" aria-label="Hodiny prerušenia">
+                      <span>h</span>
+                      <input type="text" id="prerusenie-minuty" name="prerusenie-minuty" inputmode="numeric" maxlength="2" placeholder="0" aria-label="Minúty prerušenia">
+                      <span>min</span>
+                      <button type="button" class="cas-tlacidlo" tabindex="-1" aria-label="Vybrať čas zo zoznamu" title="Vybrať čas" aria-expanded="false"><svg class="ikona" aria-hidden="true"><use href="#i-hodiny"/></svg></button>
+                    </div>
+                    <p class="chyba" id="chyba-prerusenieHodiny"></p>
+                  </div>
+                </div>
+
+                <div class="pole cela-sirka">
+                  <label for="prerusenie-dovod">Dôvod prerušenia <span class="nepovinne">(nepovinné)</span></label>
+                  <input type="text" id="prerusenie-dovod" name="prerusenie-dovod" maxlength="100" placeholder="napr. lekár, opravár práčka…">
+                  <p class="chyba"></p>
+                </div>
+              </div>
+
+              <p class="nahlad cela-sirka" id="nahlad" aria-live="polite">Odpracované: –</p>
+            </div>
+
+            <!-- Režim "Počet hodín" -->
+            <div id="blok-hodiny" class="blok" hidden>
+              <div class="pole">
+                <label for="hodiny">Odpracovaný čas</label>
+                <!-- Dve políčka: hodiny a minúty v jednom rámčeku. inputmode="numeric" = na mobile číselná klávesnica.
+                     Ikona hodín otvorí panel s výberom (app.js, Výber dĺžky) -->
+                <div class="trvanie cas-vyber">
+                  <input type="text" id="hodiny" name="hodiny" inputmode="numeric" maxlength="3" placeholder="0" aria-label="Hodiny">
+                  <span>h</span>
+                  <input type="text" id="minuty" name="minuty" inputmode="numeric" maxlength="2" placeholder="0" aria-label="Minúty">
+                  <span>min</span>
+                  <button type="button" class="cas-tlacidlo" tabindex="-1" aria-label="Vybrať čas zo zoznamu" title="Vybrať čas" aria-expanded="false"><svg class="ikona" aria-hidden="true"><use href="#i-hodiny"/></svg></button>
+                </div>
+                <p class="chyba" id="chyba-hodiny"></p>
+              </div>
+            </div>
+
+            <!-- Nepovinná poznámka – iba keď je práca niečím výnimočná -->
+            <div class="pole cela-sirka">
+              <label for="zakazka">Poznámka <span class="nepovinne">(nepovinné)</span></label>
+              <input type="text" id="zakazka" name="zakazka" maxlength="100" placeholder="napr. iná zákazka, práca navyše…">
+              <p class="chyba" id="chyba-zakazka"></p>
+            </div>
+
+            <div class="tlacidla-formulara">
+              <button type="submit" class="tlacidlo" id="tlacidlo-ulozit">Pridať záznam</button>
+              <!-- Zobrazí sa iba počas úpravy -->
+              <button type="button" class="tlacidlo tlacidlo-druhe" id="tlacidlo-zrusit" hidden>Zrušiť úpravu</button>
+            </div>
+          </form>
+        </section>
+
+        <div class="prehlad-pravy-stlpec">
+          <!-- Rýchly štart stopiek pri rozpracovaných projektoch (skryje sa, kým stopky bežia) -->
+          <section class="karta" id="rychly-start">
+            <h2>Spustiť stopky</h2>
+            <div class="rychly-start-zoznam" id="rychly-start-zoznam"></div>
+            <!-- Prázdny stav: ikona, krátky text a tlačidlo s ďalším krokom -->
+            <div class="prazdny-stav" id="rychly-start-prazdne" hidden>
+              <svg class="ikona" aria-hidden="true"><use href="#i-play"/></svg>
+              <p>Stopky sa spúšťajú pri projekte. Vytvor si prvý, napr. „Identita – Kaviareň Mlyn“.</p>
+              <button type="button" class="tlacidlo tlacidlo-druhe" data-akcia="novy-projekt">+ Nový projekt</button>
+            </div>
+          </section>
+
+          <!-- Posledných 5 záznamov (dopĺňa app.js) -->
+          <section class="karta" id="karta-posledne">
+            <h2>Posledné záznamy</h2>
+            <div class="prazdny-stav" id="posledne-prazdne" hidden>
+              <svg class="ikona" aria-hidden="true"><use href="#i-zoznam"/></svg>
+              <p>Zatiaľ žiadne záznamy. Prvý pridáš cez formulár Nový záznam alebo stopkami pri projekte.</p>
+            </div>
+            <table id="posledne-tabulka">
+              <tbody id="posledne-zaznamy"></tbody>
+            </table>
+            <button type="button" class="tlacidlo-odkaz vsetky-zaznamy" id="vsetky-zaznamy" data-zalozka="zaznamy">Všetky záznamy →</button>
+          </section>
+        </div>
+        </div>
+
+        <!-- Graf po mesiacoch (posledných 12 mesiacov). Graf aj tabuľku dopĺňa app.js. -->
+        <section class="karta karta-grafu" id="karta-grafu">
+          <div class="graf-hlavicka">
+            <div>
+              <h2 id="graf-nadpis">Zárobok po mesiacoch</h2>
+              <p class="slabsi graf-podnadpis" id="graf-podnadpis">posledných 12 mesiacov</p>
+            </div>
+            <!-- Prepínač: graf ukazuje buď zárobok, alebo hodiny (nikdy oboje naraz – mali by inú mierku) -->
+            <div class="rezim-volby prepinac-grafu" id="prepinac-grafu" role="group" aria-label="Čo ukázať v grafe">
+              <button type="button" class="rezim-tlacidlo" data-miera="zarobok" aria-pressed="true">Zárobok</button>
+              <button type="button" class="rezim-tlacidlo" data-miera="hodiny" aria-pressed="false">Hodiny</button>
+            </div>
+          </div>
+          <!-- Graf (SVG) a bublina s hodnotou pri prejdení myšou -->
+          <div class="graf-obal" id="graf-obal">
+            <div class="graf-bublina" id="graf-bublina" aria-hidden="true" hidden></div>
+          </div>
+          <div class="prazdny-stav" id="graf-prazdny" hidden>
+            <svg class="ikona" aria-hidden="true"><use href="#i-euro"/></svg>
+            <p>Graf sa ukáže, keď pridáš prvé záznamy.</p>
+          </div>
+          <!-- Tie isté čísla ako tabuľka (pre čítačky obrazovky a pre presné hodnoty) -->
+          <details class="graf-tabulka" id="graf-tabulka">
+            <summary>Zobraziť ako tabuľku</summary>
+            <table>
+              <thead>
+                <tr><th>Mesiac</th><th class="cislo">Hodiny</th><th class="cislo">Zárobok</th><th class="cislo">Záznamy</th></tr>
+              </thead>
+              <tbody id="graf-tabulka-telo"></tbody>
+            </table>
+          </details>
+        </section>
+      </section>
+
+      <!-- ===== Záložka Záznamy ===== -->
+      <section class="zalozka" data-obsah="zaznamy" aria-labelledby="nadpis-zalozky-zaznamy" hidden>
+        <div class="hlavicka"><h1 id="nadpis-zalozky-zaznamy">Záznamy</h1></div>
+
+        <!-- Súčet za vybraný mesiac (šípkami sa prepína mesiac aj tabuľka pod ním) -->
+        <section class="karta">
+          <h2>Súčet za mesiac</h2>
+          <div class="prepinac-mesiacov">
+            <button type="button" class="tlacidlo-sipka" id="mesiac-spat" aria-label="Predchádzajúci mesiac">‹</button>
+            <span class="nazov-mesiaca" id="nazov-mesiaca"></span>
+            <button type="button" class="tlacidlo-sipka" id="mesiac-dalej" aria-label="Nasledujúci mesiac">›</button>
+            <button type="button" class="tlacidlo-odkaz" id="mesiac-dnes">Tento mesiac</button>
+          </div>
+          <div class="sucet-riadok">
+            <div>
+              <span class="sucet-popis">Hodiny</span>
+              <span class="sucet-hodnota" id="sucet-hodiny">0</span>
+            </div>
+            <div>
+              <span class="sucet-popis">Zárobok</span>
+              <span class="sucet-hodnota" id="sucet-zarobok">0,00 €</span>
+              <!-- Napr. "z toho jednorazové položky: 50,00 €" (ukáže sa iba ak nejaké sú) -->
+              <span class="detail" id="sucet-jednorazove" hidden></span>
+            </div>
+            <div>
+              <span class="sucet-popis">Počet záznamov</span>
+              <span class="sucet-hodnota" id="sucet-pocet">0</span>
+            </div>
+          </div>
+
+          <!-- Výkaz práce: otvorí okno tlače (odtiaľ sa dá aj "Uložiť ako PDF") -->
+          <div class="vykaz-ovladanie">
+            <button type="button" class="tlacidlo tlacidlo-druhe" id="tlacidlo-vykaz">Výkaz práce za mesiac</button>
+            <label class="zaskrtavacie"><input type="checkbox" id="vykaz-sumy" checked> so sumami v €</label>
+            <label class="zaskrtavacie"><input type="checkbox" id="vykaz-poznamky"> s poznámkami</label>
+          </div>
+        </section>
+
+        <!-- Tabuľka záznamov za vybraný mesiac -->
+        <section class="karta" id="karta-zaznamov">
+          <h2 id="nadpis-zaznamov">Záznamy</h2>
+          <!-- Text dopĺňa app.js podľa vybraného mesiaca -->
+          <div class="prazdny-stav" id="prazdne" hidden>
+            <svg class="ikona" aria-hidden="true"><use href="#i-zoznam"/></svg>
+            <p id="prazdne-text"></p>
+            <button type="button" class="tlacidlo tlacidlo-druhe" data-zalozka="prehlad">+ Pridať záznam</button>
+          </div>
+          <!-- Obal s pevnou výškou: keď je záznamov veľa, tabuľka sa v ňom roluje -->
+          <div class="tabulka-obal">
+          <table id="tabulka" hidden>
+            <thead>
+              <tr>
+                <th>Dátum</th>
+                <th>Projekt / poznámka</th>
+                <th class="cislo">Hodiny</th>
+                <th class="cislo">Sadzba</th>
+                <th class="cislo">Suma</th>
+                <!-- Nadpis stĺpca s tlačidlami je skrytý, ale čítačky obrazovky ho prečítajú -->
+                <th><span class="skryte">Akcie</span></th>
+              </tr>
+            </thead>
+            <!-- Riadky sem dopĺňa app.js -->
+            <tbody id="telo-tabulky"></tbody>
+          </table>
+          </div>
+        </section>
+
+        <!-- Jednorazové položky za vybraný mesiac (sumy mimo hodín, napr. nafta, materiál) -->
+        <section class="karta">
+          <h2 id="nadpis-jednorazovych">Jednorazové položky</h2>
+          <p class="slabsi">Sumy mimo hodín, ktoré fakturuješ zákazníkovi (napr. nafta, materiál). Pripočítajú sa k zárobku mesiaca.</p>
+          <ul class="zoznam-sadzieb" id="zoznam-jednorazovych"></ul>
+          <div class="prazdny-stav maly" id="ziadne-jednorazove" hidden>
+            <svg class="ikona" aria-hidden="true"><use href="#i-euro"/></svg>
+            <p id="ziadne-jednorazove-text"></p>
+          </div>
+
+          <!-- Formulár je zbalený; rozbalí sa kliknutím na "+ Pridať položku" alebo pri úprave -->
+          <details class="pridanie-jednorazovej" id="pridanie-jednorazovej">
+            <summary>+ Pridať položku</summary>
+            <form id="formular-jednorazovej" class="formular-sadzby" novalidate>
+              <h3 class="cela-sirka" id="nadpis-formulara-jednorazovej">Nová položka</h3>
+              <div class="pole">
+                <label for="jednorazova-datum">Dátum</label>
+                <input type="date" id="jednorazova-datum" name="jednorazova-datum">
+                <p class="chyba" id="chyba-jednorazova-datum"></p>
+              </div>
+              <div class="pole">
+                <label for="jednorazova-suma">Suma (€)</label>
+                <input type="text" id="jednorazova-suma" name="jednorazova-suma" inputmode="decimal" placeholder="napr. 50">
+                <p class="chyba" id="chyba-jednorazova-suma"></p>
+              </div>
+              <div class="pole cela-sirka">
+                <label for="jednorazova-nazov">Názov</label>
+                <input type="text" id="jednorazova-nazov" name="jednorazova-nazov" maxlength="100" placeholder="napr. nafta">
+                <p class="chyba" id="chyba-jednorazova-nazov"></p>
+              </div>
+              <div class="tlacidla-formulara">
+                <button type="submit" class="tlacidlo" id="tlacidlo-ulozit-jednorazovu">Pridať položku</button>
+                <button type="button" class="tlacidlo tlacidlo-druhe" id="tlacidlo-zrusit-jednorazovu" hidden>Zrušiť úpravu</button>
+              </div>
+            </form>
+          </details>
+        </section>
+
+      </section>
+
+      <!-- ===== Záložka Projekty ===== -->
+      <section class="zalozka" data-obsah="projekty" aria-labelledby="nadpis-zalozky-projekty" hidden>
+        <div class="hlavicka">
+          <h1 id="nadpis-zalozky-projekty">Projekty</h1>
+          <p class="podnadpis">Pri projekte klikni na Štart – po Stope sa vytvorí záznam.</p>
+        </div>
+
+        <section class="karta" id="karta-projektov">
+          <!-- Zoznam rozpracovaných projektov (dopĺňa app.js) -->
+          <ul class="zoznam-sadzieb" id="zoznam-projektov"></ul>
+          <div class="prazdny-stav" id="ziadne-projekty" hidden>
+            <svg class="ikona" aria-hidden="true"><use href="#i-priecinok"/></svg>
+            <p id="ziadne-projekty-text"></p>
+            <button type="button" class="tlacidlo tlacidlo-druhe" data-akcia="novy-projekt">+ Nový projekt</button>
+          </div>
+
+          <!-- Detail jedného projektu: súčty a všetky jeho záznamy (dopĺňa app.js) -->
+          <div class="detail-projektu" id="detail-projektu" hidden></div>
+
+          <!-- Uzavreté projekty sú zbalené, aby nezavadzali -->
+          <details class="uzavrete-projekty" id="uzavrete-projekty" hidden>
+            <summary id="nadpis-uzavretych">Uzavreté projekty</summary>
+            <ul class="zoznam-sadzieb" id="zoznam-uzavretych"></ul>
+          </details>
+
+          <!-- Formulár projektu je zbalený; rozbalí sa kliknutím na "+ Nový projekt" alebo pri úprave -->
+          <details class="pridanie-jednorazovej" id="pridanie-projektu">
+            <summary>+ Nový projekt</summary>
+            <form id="formular-projektu" class="formular-sadzby" novalidate>
+              <h3 class="cela-sirka" id="nadpis-formulara-projektu">Nový projekt</h3>
+              <div class="pole">
+                <label for="projekt-nazov">Názov</label>
+                <input type="text" id="projekt-nazov" name="projekt-nazov" maxlength="60" placeholder="napr. Identita – Kaviareň Mlyn">
+                <p class="chyba" id="chyba-projekt-nazov"></p>
+              </div>
+              <div class="pole">
+                <label for="projekt-sadzba">Hodinová sadzba (€)</label>
+                <input type="text" id="projekt-sadzba" name="projekt-sadzba" inputmode="decimal" placeholder="napr. 25">
+                <!-- Tlačidlá s uloženými sadzbami (dopĺňa app.js) -->
+                <div class="sadzby-tlacidla" id="projekt-sadzby-tlacidla"></div>
+                <p class="chyba" id="chyba-projekt-sadzba"></p>
+              </div>
+              <p class="slabsi cela-sirka napoveda-projektu">Zmena sadzby platí iba pre nové záznamy – staré ostanú, ako boli.</p>
+              <div class="tlacidla-formulara">
+                <button type="submit" class="tlacidlo" id="tlacidlo-ulozit-projekt">Pridať projekt</button>
+                <button type="button" class="tlacidlo tlacidlo-druhe" id="tlacidlo-zrusit-projekt" hidden>Zrušiť úpravu</button>
+              </div>
+            </form>
+          </details>
+        </section>
+      </section>
+
+      <!-- ===== Záložka Dane a odvody ===== -->
+      <section class="zalozka" data-obsah="dane" aria-labelledby="nadpis-zalozky-dane" hidden>
+        <div class="hlavicka hlavicka-dane">
+          <div>
+            <h1 id="nadpis-zalozky-dane">Dane a odvody</h1>
+            <p class="podnadpis">orientačný odhad podľa profilu v Nastaveniach</p>
+          </div>
+          <!-- Odhad príjmu: krátka veta a "Zmeniť"; políčko sa ukáže až po kliknutí -->
+          <div class="odhad-prijmu" id="odhad-prijmu">
+            <p class="odhad-veta"><span id="odhad-text"></span>
+              <button type="button" class="tlacidlo-odkaz" id="odhad-zmenit">Zmeniť</button></p>
+            <div class="odhad-pole" id="odhad-pole" hidden>
+              <label for="odhad-mesacne">Odhad príjmu na ďalšie mesiace (€ za mesiac)</label>
+              <div class="odhad-riadok">
+                <input type="text" id="odhad-mesacne" inputmode="decimal">
+                <button type="button" class="tlacidlo" id="odhad-hotovo">Hotovo</button>
+              </div>
+              <p class="slabsi" id="odhad-navrh"></p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Upozornenie: jeden riadok, celý text po rozbalení -->
+        <details class="upozornenie upozornenie-dane">
+          <summary>⚠️ Orientačný odhad, nie daňové ani odvodové poradenstvo.</summary>
+          <p>
+            Počíta sa podľa pravidiel známych k 19. 10. 2026. Skutočné sumy ti určí finančná správa,
+            Sociálna poisťovňa a zdravotná poisťovňa – pred platbou si ich over.
+          </p>
+        </details>
+
+        <!-- Dlaždice, mesačné odvody, ročné povinnosti a podrobný výpočet dopĺňa app.js -->
+        <div id="vysledok-dane"></div>
+
+      </section>
+
+      <!-- ===== Záložka Nastavenia ===== -->
+      <section class="zalozka" data-obsah="nastavenia" aria-labelledby="nadpis-zalozky-nastavenia" hidden>
+        <div class="hlavicka"><h1 id="nadpis-zalozky-nastavenia">Nastavenia</h1></div>
+
+        <div class="mriezka-nastaveni">
+          <!-- Nastavenia: profil živnostníka (pre výpočet daní a odvodov) -->
+          <section class="karta" id="nastavenia-profil">
+            <h2>Profil živnostníka</h2>
+            <div class="obsah-karty">
+              <p class="slabsi">Podľa týchto údajov appka odhaduje dane a odvody. Počíta s paušálnymi výdavkami 60 %.</p>
+              <form id="formular-profil" class="formular-sadzby" novalidate>
+                <div class="pole">
+                  <label for="profil-vznik">Dátum vzniku živnosti</label>
+                  <input type="date" id="profil-vznik" name="profil-vznik">
+                  <p class="chyba" id="chyba-profil-vznik"></p>
+                </div>
+                <div class="zaskrtavacie-riadok cela-sirka zaskrtavacie-pod-sebou">
+                  <label class="zaskrtavacie">
+                    <input type="checkbox" id="profil-predtym">
+                    V posledných 5 rokoch som už mal živnosť alebo inú SZČO činnosť
+                  </label>
+                  <p class="slabsi napoveda">Konateľstvo v s. r. o. bez vyplácania sa sem podľa nášho výkladu nepočíta – over si to v Sociálnej poisťovni.</p>
+                  <label class="zaskrtavacie">
+                    <input type="checkbox" id="profil-zamestnany">
+                    Popri živnosti som zamestnaný
+                  </label>
+                </div>
+                <div class="tlacidla-formulara">
+                  <button type="submit" class="tlacidlo">Uložiť profil</button>
+                </div>
+              </form>
+            </div>
+          </section>
+
+          <!-- Nastavenia: uložené sadzby -->
+          <section class="karta" id="nastavenia">
+            <h2>Sadzby</h2>
+            <div class="obsah-karty">
+              <p class="slabsi">
+                Sadzby sa ukážu ako tlačidlá pod políčkom sadzby. Predvolená sa vyplní sama pri otvorení appky.
+              </p>
+              <ul class="zoznam-sadzieb" id="zoznam-sadzieb"></ul>
+              <div class="prazdny-stav maly" id="ziadne-sadzby" hidden>
+                <svg class="ikona" aria-hidden="true"><use href="#i-euro"/></svg>
+                <p>Zatiaľ nemáš žiadne sadzby. Pridaj prvú nižšie – potom ju vo formulári vyberieš jedným klikom.</p>
+              </div>
+
+              <form id="formular-sadzby" class="formular-sadzby" novalidate>
+                <h3 class="cela-sirka" id="nadpis-sadzby">Nová sadzba</h3>
+                <div class="pole">
+                  <label for="sadzba-nazov">Názov</label>
+                  <input type="text" id="sadzba-nazov" name="sadzba-nazov" maxlength="40" placeholder="napr. Víkend">
+                  <p class="chyba" id="chyba-sadzba-nazov"></p>
+                </div>
+                <div class="pole">
+                  <label for="sadzba-suma">Suma za hodinu (€)</label>
+                  <input type="text" id="sadzba-suma" name="sadzba-suma" inputmode="decimal" placeholder="napr. 35">
+                  <p class="chyba" id="chyba-sadzba-suma"></p>
+                </div>
+                <div class="tlacidla-formulara">
+                  <button type="submit" class="tlacidlo" id="tlacidlo-ulozit-sadzbu">Pridať sadzbu</button>
+                  <button type="button" class="tlacidlo tlacidlo-druhe" id="tlacidlo-zrusit-sadzbu" hidden>Zrušiť úpravu</button>
+                </div>
+              </form>
+            </div>
+          </section>
+
+          <!-- Záloha do súboru a obnovenie zo súboru -->
+          <section class="karta" id="nastavenia-zaloha">
+            <h2>Záloha dát</h2>
+            <div class="obsah-karty">
+              <p class="slabsi">
+                Appka ukladá dáta v tomto prehliadači. Vymazanie histórie (dát stránok) ich zmaže –
+                preto ich drž aj v súbore na disku.
+              </p>
+
+              <!-- Automatické ukladanie do súboru (texty a viditeľnosť tlačidiel dopĺňa app.js) -->
+              <div class="subor-dat">
+                <h3>Automatické ukladanie do súboru</h3>
+                <p class="slabsi" id="subor-dat-text"></p>
+                <div class="tlacidla-zalohy">
+                  <button type="button" class="tlacidlo" id="subor-vytvorit" hidden>Vytvoriť dátový súbor</button>
+                  <button type="button" class="tlacidlo tlacidlo-druhe" id="subor-otvorit" hidden>Otvoriť existujúci súbor</button>
+                  <button type="button" class="tlacidlo" id="subor-povolit" hidden>Povoliť ukladanie</button>
+                  <button type="button" class="tlacidlo tlacidlo-druhe" id="subor-odpojit" hidden>Odpojiť súbor</button>
+                </div>
+              </div>
+
+              <h3>Ručná záloha</h3>
+              <!-- Kedy bola posledná záloha (dopĺňa app.js) -->
+              <p class="zaloha-stav" id="zaloha-stav"></p>
+              <div class="tlacidla-zalohy">
+                <button type="button" class="tlacidlo" id="tlacidlo-stiahnut">Stiahnuť zálohu</button>
+                <button type="button" class="tlacidlo tlacidlo-druhe" id="tlacidlo-nacitat">Načítať zálohu</button>
+                <!-- Skryté políčko na výber súboru; otvára ho tlačidlo "Načítať zálohu" -->
+                <input type="file" id="vyber-suboru" accept=".json,application/json" hidden>
+              </div>
+            </div>
+          </section>
+
+          <!-- Vzhľad: tmavý režim (predvolená je svetlá verzia) -->
+          <section class="karta" id="nastavenia-vzhlad">
+            <h2>Vzhľad</h2>
+            <label class="zaskrtavacie"><input type="checkbox" id="tmavy-rezim"> Tmavý režim</label>
+            <label class="zaskrtavacie"><input type="checkbox" id="sklo-rezim"> Tekuté sklo (priesvitné karty a odlesky)</label>
+            <p class="slabsi napoveda-vzhladu">Appka si voľby zapamätá v tomto prehliadači. Ak by bola appka pomalá, sklo vypni.</p>
+          </section>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- Spodná lišta s navigáciou (iba na mobile) -->
+  <nav class="spodna-nav" aria-label="Navigácia">
+    <button type="button" data-zalozka="prehlad"><svg aria-hidden="true"><use href="#i-domov"/></svg>Prehľad</button>
+    <button type="button" data-zalozka="zaznamy"><svg aria-hidden="true"><use href="#i-zoznam"/></svg>Záznamy</button>
+    <button type="button" data-zalozka="projekty"><svg aria-hidden="true"><use href="#i-priecinok"/></svg>Projekty</button>
+    <button type="button" data-zalozka="dane"><svg aria-hidden="true"><use href="#i-percento"/></svg>Dane</button>
+    <button type="button" data-zalozka="nastavenia"><svg aria-hidden="true"><use href="#i-nastavenia"/></svg>Nastavenia</button>
+  </nav>
+
+  <!-- Vlastné okno s otázkou (namiesto šedého okna prehliadača). Obsah dopĺňa app.js.
+       <dialog> je okno, ktoré prehliadač zobrazí nad stránkou; form method="dialog" ho po kliknutí
+       na tlačidlo zavrie a zapamätá si hodnotu (value) tlačidla. -->
+  <dialog class="okno" id="okno" aria-labelledby="okno-nadpis" aria-describedby="okno-text">
+    <form method="dialog" class="okno-obsah">
+      <span class="okno-ikona" aria-hidden="true"><svg class="ikona"><use id="okno-ikona" href="#i-otaznik"/></svg></span>
+      <h2 id="okno-nadpis"></h2>
+      <p id="okno-text"></p>
+      <div class="okno-tlacidla">
+        <button value="nie" class="tlacidlo tlacidlo-druhe" id="okno-nie">Zrušiť</button>
+        <button value="ano" class="tlacidlo" id="okno-ano">OK</button>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- Krátka správa dole na obrazovke (napr. "Záloha stiahnutá") -->
+  <div id="sprava" class="sprava" role="status" hidden>
+    <span id="sprava-text"></span>
+    <button type="button" class="sprava-zavriet" id="sprava-zavriet" aria-label="Zavrieť správu">×</button>
+  </div>
+
+  <!-- Výkaz práce na tlač. Na obrazovke je skrytý, ukáže sa iba pri tlači (obsah dopĺňa app.js). -->
+  <section id="vykaz" class="vykaz"></section>
+
+  <!-- defer: skript sa spustí až keď je celá stránka načítaná -->
+  <script src="app.js" defer></script>
+</body>
+</html>

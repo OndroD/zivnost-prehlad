@@ -1,0 +1,2569 @@
+/* ===== Farby a základné hodnoty (na jednom mieste, ľahko sa menia) ===== */
+/* Paleta: #190019 · #2B124C · #522B5B · #854F6C · #DFB6B2 · #FBE4D8 */
+:root {
+  --pozadie: #fcf1eb;        /* svetlé broskyňové pozadie stránky */
+  --karta: #fffaf7;          /* karty a políčka */
+  --text: #190019;
+  --text-slabsi: #765468;    /* popisy, sivší text */
+  --okraj: #eed7cf;          /* jemné čiary a okraje */
+  --hlavna: #522b5b;         /* tlačidlá, aktívne prvky */
+  --hlavna-tmavsia: #2b124c; /* tlačidlá pod myšou */
+  --na-hlavnej: #fbe4d8;     /* text na hlavnej farbe */
+  --druha: #854f6c;          /* doplnková farba (štítky, ikony) */
+  --jemna: #dfb6b2;          /* jemné zvýraznenie, okraje zaškrtávacích políčok */
+  --zvyraznenie: #fbe4d8;    /* pozadie zvýraznených vecí */
+  --stopky: #2b124c;         /* karta bežiacich stopiek */
+  --stopky-text: #fbe4d8;
+  --stopky-slabsi: #dfb6b2;
+  --chyba: #b3261e;
+  --upozornenie: #8f5414;    /* oranžovohnedá – tmavšia, aby sa dala čítať aj na skle */
+  --riadok-pod-mysou: rgba(133, 79, 108, 0.08); /* riadok tabuľky pod myšou */
+  --karta-pevna: #fffaf7;    /* vždy nepriehľadná karta (bublina grafu) – sklo ju nemení */
+  --tien: 0 1px 2px rgba(43, 18, 76, 0.05), 0 6px 20px rgba(43, 18, 76, 0.06);
+  --kruh: 0 0 0 3px rgba(223, 182, 178, 0.5); /* zvýraznenie aktívneho políčka */
+  --polomer: 14px;
+  --panel: #2b124c;          /* bočný panel s navigáciou */
+  --panel-text: #fbe4d8;
+  --panel-slabsi: #dfb6b2;
+  --panel-aktivna: #522b5b;
+  --bodka-upozornenia: #f0b060; /* malá oranžová bodka (napr. stará záloha) */
+  --graf-stlpec: #854f6c;       /* stĺpce grafu (kontrast s pozadím overený) */
+  --graf-stlpec-hover: #522b5b; /* stĺpec pod myšou */
+  color-scheme: light;       /* ikony v políčkach (kalendár, hodiny) v svetlom prevedení */
+}
+
+/* Tmavý režim – iba keď si ho zapneš (predvolená je svetlá verzia) */
+:root[data-theme="dark"] {
+  --pozadie: #190019;
+  --karta: #2b124c;
+  --text: #fbe4d8;
+  --text-slabsi: #c8a2a6;
+  --okraj: #45224f;
+  --hlavna: #dfb6b2;
+  --hlavna-tmavsia: #fbe4d8;
+  --na-hlavnej: #190019;
+  --druha: #dfb6b2;
+  --zvyraznenie: #3a1a47;
+  --stopky: #522b5b;
+  --chyba: #ff8a80;
+  --upozornenie: #f0b060;
+  --riadok-pod-mysou: rgba(251, 228, 216, 0.07);
+  --karta-pevna: #2b124c;
+  --tien: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --panel: #120012;
+  --panel-aktivna: #2b124c;
+  --graf-stlpec: #dfb6b2;
+  --graf-stlpec-hover: #fbe4d8;
+  color-scheme: dark;
+}
+
+/* box-sizing: šírka prvku zahŕňa aj padding a okraj – ľahšie sa s tým počíta */
+* {
+  box-sizing: border-box;
+}
+
+/* Prvky s atribútom hidden sa naozaj skryjú, aj keď im inde nastavíme display */
+[hidden] {
+  display: none !important;
+}
+
+/* Farba označeného textu (namiesto modrej z prehliadača) */
+::selection {
+  background: var(--jemna);
+  color: #190019;
+}
+
+body {
+  margin: 0;
+  background: var(--pozadie);
+  color: var(--text);
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased; /* jemnejšie písmo na Macu */
+}
+
+/* ===== Rozloženie: bočný panel vľavo + obsah ===== */
+/* Mriežka s dvoma stĺpcami: panel má pevnú šírku, obsah zaberie zvyšok.
+   minmax(0, 1fr) = stĺpec sa smie zúžiť aj pod šírku najširšieho obsahu (inak by tabuľka
+   roztiahla stránku a na mobile by bola širšia ako obrazovka) */
+.appka {
+  display: grid;
+  grid-template-columns: 232px minmax(0, 1fr);
+  min-height: 100vh;
+}
+
+/* Skrytý "sklad" ikon (ikony sa z neho iba požičiavajú cez <use>) */
+.ikony {
+  display: none;
+}
+
+/* Spoločný vzhľad ikon: kreslia sa čiarou vo farbe textu */
+.ikona,
+.panel svg,
+.spodna-nav svg {
+  width: 18px;
+  height: 18px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  flex: none;
+}
+
+/* Bočný panel ostane pri rolovaní na mieste (sticky) */
+.panel {
+  background: var(--panel);
+  color: var(--panel-text);
+  padding: 24px 14px;
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.logo {
+  font-weight: 700;
+  font-size: 1.05rem;
+  letter-spacing: -0.01em;
+  padding: 0 12px 22px;
+}
+
+.logo span {
+  display: block;
+  font-weight: 400;
+  font-size: 0.78rem;
+  color: var(--panel-slabsi);
+}
+
+.nav-polozka {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  font: inherit;
+  font-size: 0.95rem;
+  color: var(--panel-slabsi);
+  background: none;
+  border: 0;
+  border-radius: 10px;
+  padding: 10px 12px;
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.15s, color 0.15s;
+}
+
+.nav-polozka:hover {
+  color: var(--panel-text);
+  background: rgba(251, 228, 216, 0.07);
+}
+
+/* Práve otvorená záložka (aria-current nastavuje app.js) */
+.nav-polozka[aria-current="page"] {
+  background: var(--panel-aktivna);
+  color: var(--panel-text);
+  font-weight: 600;
+}
+
+/* Spodok panela (stopky, záloha) – margin-top: auto ho odtlačí úplne dole */
+.panel-spodok {
+  margin-top: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* Nenápadný riadok "Posledná záloha: ..." */
+.panel-zaloha {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font: inherit;
+  font-size: 0.78rem;
+  text-align: left;
+  color: var(--panel-slabsi);
+  background: none;
+  border: 0;
+  border-radius: 8px;
+  padding: 6px 12px;
+  cursor: pointer;
+  opacity: 0.8;
+}
+
+.panel-zaloha .ikona {
+  width: 14px;
+  height: 14px;
+}
+
+.panel-zaloha:hover {
+  opacity: 1;
+  color: var(--panel-text);
+}
+
+/* Stará alebo žiadna záloha: výraznejšie a s bodkou */
+.panel-zaloha.stara {
+  opacity: 1;
+  color: var(--panel-text);
+}
+
+.panel-zaloha.stara::after {
+  content: "";
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--bodka-upozornenia);
+  flex: none;
+}
+
+/* Bodka pri záložke Nastavenia, keď je čas na zálohu */
+.nav-polozka.ma-bodku::after {
+  content: "";
+  width: 7px;
+  height: 7px;
+  margin-left: auto;
+  border-radius: 50%;
+  background: var(--bodka-upozornenia);
+}
+
+/* Bežiace stopky dole v paneli */
+.panel-stopky {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font: inherit;
+  font-size: 0.85rem;
+  text-align: left;
+  color: var(--panel-text);
+  background: rgba(251, 228, 216, 0.08);
+  border: 1px solid rgba(251, 228, 216, 0.15);
+  border-radius: 10px;
+  padding: 10px 12px;
+  cursor: pointer;
+  font-variant-numeric: tabular-nums;
+}
+
+.panel-stopky:hover {
+  background: rgba(251, 228, 216, 0.14);
+}
+
+/* Bodka, ktorá pomaly "dýcha", kým stopky bežia */
+.bodka {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #dfb6b2;
+  flex: none;
+  animation: dych 2s ease-in-out infinite;
+}
+
+.pauza .bodka {
+  animation: none;
+  opacity: 0.4;
+}
+
+@keyframes dych {
+  50% { opacity: 0.35; }
+}
+
+/* Kto má v systéme vypnuté animácie, bodka sa nehýbe */
+@media (prefers-reduced-motion: reduce) {
+  .bodka { animation: none; }
+}
+
+/* Obsah v strede pravého stĺpca, najviac 1 200 px široký */
+.obal {
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 32px 40px 96px; /* väčší spodok, aby správa dole nezakryla obsah */
+  min-width: 0; /* bez tohto by široká tabuľka roztiahla celú stránku */
+}
+
+/* Nadpis záložky a podnadpis pod ním */
+.hlavicka {
+  margin-bottom: 24px;
+}
+
+h1 {
+  margin: 0;
+  font-size: 1.6rem;
+  letter-spacing: -0.02em; /* trochu bližšie písmená pôsobia modernejšie */
+}
+
+.podnadpis {
+  margin: 2px 0 0;
+  color: var(--text-slabsi);
+  font-size: 0.9rem;
+}
+
+/* Nastavenia: karty v dvoch stĺpcoch */
+.mriezka-nastaveni {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  align-items: start;
+}
+
+.mriezka-nastaveni .karta {
+  margin-bottom: 0;
+}
+
+.napoveda-vzhladu {
+  margin: 10px 0 0;
+  font-size: 0.82rem;
+}
+
+/* ===== Spodná lišta (iba na mobile – pozri dole) ===== */
+.spodna-nav {
+  display: none;
+}
+
+h2 {
+  margin: 0 0 16px;
+  font-size: 1.1rem;
+  letter-spacing: -0.01em;
+}
+
+h3 {
+  margin: 8px 0 12px;
+  font-size: 1rem;
+}
+
+/* Karta pre každú časť stránky: jemný okraj a tieň */
+.karta {
+  background: var(--karta);
+  border: 1px solid var(--okraj);
+  border-radius: var(--polomer);
+  box-shadow: var(--tien);
+  padding: 22px;
+  margin-bottom: 20px;
+}
+
+.slabsi {
+  color: var(--text-slabsi);
+  margin: 0 0 16px;
+}
+
+/* Text viditeľný iba pre čítačky obrazovky (pomôcka pre nevidiacich) */
+.skryte {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+/* ===== Formulár ===== */
+/* Mriežka: na počítači 2 stĺpce, na mobile 1 (pozri dole) */
+#formular,
+.formular-sadzby {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px 16px;
+}
+
+.pole {
+  display: flex;
+  flex-direction: column;
+}
+
+label {
+  font-weight: 600;
+  font-size: 0.82rem;
+  color: var(--text-slabsi);
+  margin-bottom: 6px;
+}
+
+/* Textové políčka (zaškrtávacie a prepínacie majú vlastný vzhľad nižšie) */
+input[type="text"],
+input[type="date"],
+select {
+  font: inherit;
+  color: inherit;
+  background: var(--pozadie);
+  padding: 10px 12px;
+  border: 1px solid var(--okraj);
+  border-radius: 10px;
+  width: 100%;
+  transition: border-color 0.15s, box-shadow 0.15s; /* plynulá zmena pri kliknutí */
+}
+
+input[type="text"]:hover,
+input[type="date"]:hover,
+select:hover {
+  border-color: var(--jemna);
+}
+
+input[type="text"]:focus,
+input[type="date"]:focus,
+select:focus {
+  outline: none;
+  border-color: var(--druha);
+  box-shadow: var(--kruh);
+}
+
+/* Pole s chybou dostane červený okraj (atribút nastavuje app.js) */
+input[aria-invalid="true"] {
+  border-color: var(--chyba);
+}
+
+/* ===== Výber času (Od – do) ===== */
+/* Políčko HH:MM s ikonou hodín vpravo; panel so stĺpcami Hod. / Min. sa vysunie pod ním */
+.cas-vyber {
+  position: relative;
+}
+
+.cas-vyber .cas-pole {
+  padding-right: 44px; /* miesto pre tlačidlo s hodinami */
+  font-variant-numeric: tabular-nums; /* číslice rovnako široké – čas neposkakuje */
+  letter-spacing: 0.04em;
+  cursor: text;
+}
+
+.cas-pole::placeholder {
+  color: var(--text-slabsi);
+}
+
+.cas-tlacidlo {
+  position: absolute;
+  top: 50%;
+  right: 6px;
+  transform: translateY(-50%);
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text-slabsi);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.cas-tlacidlo .ikona {
+  width: 18px;
+  height: 18px;
+}
+
+.cas-tlacidlo:hover,
+.cas-tlacidlo[aria-expanded="true"] {
+  background: var(--zvyraznenie);
+  color: var(--hlavna);
+}
+
+.cas-panel {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  z-index: 30;
+  display: flex;
+  gap: 6px;
+  padding: 8px;
+  background: var(--karta-pevna); /* nepriehľadné aj pri skle */
+  border: 1px solid var(--okraj);
+  border-radius: 12px;
+  box-shadow: 0 10px 30px rgba(25, 0, 25, 0.18);
+  animation: cas-panel-ukaz 0.12s ease-out;
+}
+
+@keyframes cas-panel-ukaz {
+  from { opacity: 0; transform: translateY(-4px); }
+}
+
+.cas-stlpec-nadpis {
+  margin: 0 0 4px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-slabsi);
+  text-align: center;
+}
+
+.cas-zoznam {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  width: 64px;
+  height: 216px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  padding-right: 2px;
+}
+
+.cas-zoznam button {
+  flex: none;
+  font: inherit;
+  font-variant-numeric: tabular-nums;
+  padding: 6px 0;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text);
+  cursor: pointer;
+  transition: background 0.1s;
+}
+
+.cas-zoznam button:hover {
+  background: var(--riadok-pod-mysou);
+}
+
+.cas-zoznam button:focus-visible {
+  outline: none;
+  box-shadow: var(--kruh);
+}
+
+.cas-zoznam button[aria-pressed="true"] {
+  background: var(--hlavna);
+  color: var(--na-hlavnej);
+  font-weight: 600;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cas-panel { animation: none; }
+}
+
+/* Chybová hláška pod poľom; min-height drží miesto, aby formulár "neskákal" */
+.chyba {
+  color: var(--chyba);
+  font-size: 0.82rem;
+  margin: 4px 0 8px;
+  min-height: 1.2em;
+}
+
+/* Dvojica políčok "[ 1 ] h [ 48 ] min" */
+.trvanie {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  color: var(--text-slabsi);
+}
+
+/* Dĺžka h + min v jednom rámčeku – vyzerá rovnako ako políčko času Od – do */
+.trvanie.cas-vyber {
+  background: var(--pozadie);
+  border: 1px solid var(--okraj);
+  border-radius: 10px;
+  padding: 0 6px 0 4px;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.trvanie.cas-vyber:hover {
+  border-color: var(--jemna);
+}
+
+.trvanie.cas-vyber:focus-within {
+  border-color: var(--druha);
+  box-shadow: var(--kruh);
+}
+
+.trvanie.cas-vyber:has(input[aria-invalid="true"]) {
+  border-color: var(--chyba);
+}
+
+/* Políčka vnútri rámčeka sú bez vlastného okraja */
+.trvanie input[type="text"] {
+  width: 3.2em; /* úzke políčka, stačia na 2 – 3 číslice */
+  padding: 10px 6px;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+  text-align: right;
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+}
+
+.trvanie input[type="text"]:focus {
+  box-shadow: none;
+}
+
+.trvanie > span {
+  margin-right: 8px;
+}
+
+/* Ikona hodín je tu súčasťou riadku (nie prilepená vpravo cez position) */
+.trvanie .cas-tlacidlo {
+  position: static;
+  transform: none;
+  margin-left: auto;
+}
+
+/* Prvok cez celú šírku formulára (oba stĺpce) */
+.cela-sirka {
+  grid-column: 1 / -1;
+}
+
+/* Obal, ktorý sa pre mriežku "nepočíta" – jeho políčka sa zaradia priamo do stĺpcov */
+.blok {
+  display: contents;
+}
+
+/* Prepínač Od – do / Počet hodín: vyzerá ako jeden ovládač z dvoch častí */
+.rezim {
+  border: none;
+  padding: 0;
+  margin: 0 0 14px;
+}
+
+.rezim legend {
+  font-weight: 600;
+  font-size: 0.82rem;
+  color: var(--text-slabsi);
+  margin-bottom: 6px;
+  padding: 0;
+}
+
+.rezim-volby {
+  display: inline-flex;
+  background: var(--pozadie);
+  border: 1px solid var(--okraj);
+  border-radius: 10px;
+  padding: 3px;
+}
+
+.rezim-volba {
+  position: relative;
+  font-size: 0.9rem;
+  color: var(--text-slabsi);
+  padding: 7px 16px;
+  border-radius: 8px;
+  cursor: pointer;
+  margin: 0;
+  font-weight: 500;
+}
+
+/* Samotný prepínač (krúžok) skryjeme – klikne sa na celý text */
+.rezim-volba input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* Vybraná časť je "vystúpená" */
+.rezim-volba:has(input:checked) {
+  background: var(--karta);
+  color: var(--text);
+  font-weight: 600;
+  box-shadow: var(--tien);
+}
+
+/* Pri ovládaní klávesnicou je vidieť, kde je kurzor */
+.rezim-volba:has(input:focus-visible) {
+  box-shadow: var(--kruh);
+}
+
+/* Zaškrtávacie políčko s textom (obed, prerušenie, voľby výkazu) */
+.zaskrtavacie {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 500;
+  font-size: 0.92rem;
+  color: var(--text);
+  margin: 0;
+  cursor: pointer;
+}
+
+/* Vlastné zaškrtávacie políčko (namiesto modrého z prehliadača) */
+input[type="checkbox"] {
+  appearance: none;
+  -webkit-appearance: none;
+  margin: 0;
+  flex: none;
+  width: 20px;
+  height: 20px;
+  border: 1.5px solid var(--jemna);
+  border-radius: 6px;
+  background: var(--karta);
+  display: inline-grid;
+  place-items: center;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+/* Fajka: obdĺžnik s dvoma okrajmi, otočený o 45° (kým nie je zaškrtnuté, má veľkosť 0) */
+input[type="checkbox"]::after {
+  content: "";
+  width: 10px;
+  height: 6px;
+  border: 2px solid var(--na-hlavnej);
+  border-top: 0;
+  border-right: 0;
+  transform: rotate(-45deg) scale(0);
+  margin-top: -2px;
+  transition: transform 0.12s;
+}
+
+input[type="checkbox"]:checked {
+  background: var(--hlavna);
+  border-color: var(--hlavna);
+}
+
+input[type="checkbox"]:checked::after {
+  transform: rotate(-45deg) scale(1);
+}
+
+input[type="checkbox"]:hover {
+  border-color: var(--druha);
+}
+
+input[type="checkbox"]:focus-visible {
+  outline: none;
+  box-shadow: var(--kruh);
+}
+
+/* Riadok so zaškrtávacími políčkami (obed, prerušenie) */
+.zaskrtavacie-riadok {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 28px;
+  margin-bottom: 14px;
+}
+
+/* "Odpracované: 8 h" pod časmi */
+.nahlad {
+  margin: 0 0 16px;
+  font-weight: 600;
+  color: var(--hlavna);
+}
+
+.tlacidla-formulara {
+  grid-column: 1 / -1; /* cez celú šírku formulára */
+  display: flex;
+  gap: 12px;
+  margin-top: 4px;
+}
+
+.tlacidla-formulara .tlacidlo {
+  flex: 1;
+}
+
+/* ===== Tlačidlá ===== */
+/* Hlavné tlačidlo: plné */
+.tlacidlo {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px; /* medzera medzi ikonou a textom */
+  font: inherit;
+  font-weight: 600;
+  font-size: 0.95rem;
+  padding: 11px 18px;
+  border: 1px solid var(--hlavna);
+  border-radius: 10px;
+  background: var(--hlavna);
+  color: var(--na-hlavnej);
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.tlacidlo:hover {
+  background: var(--hlavna-tmavsia);
+  border-color: var(--hlavna-tmavsia);
+}
+
+/* Druhoradé tlačidlo: iba obrys */
+.tlacidlo-druhe {
+  background: transparent;
+  color: var(--hlavna);
+  border-color: var(--okraj);
+}
+
+.tlacidlo-druhe:hover {
+  background: var(--zvyraznenie);
+  border-color: var(--jemna);
+}
+
+/* Malé tlačidlá v tabuľke a zoznamoch: nenápadné, výraznejšie až pod myšou */
+.tlacidlo-male {
+  font: inherit;
+  font-size: 0.82rem;
+  font-weight: 500;
+  padding: 5px 10px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text-slabsi);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.tlacidlo-male:hover {
+  background: var(--zvyraznenie);
+  color: var(--hlavna);
+}
+
+.tlacidlo-male.nebezpecne:hover {
+  background: rgba(179, 38, 30, 0.08);
+  color: var(--chyba);
+}
+
+/* Malé tlačidlo s ikonou namiesto textu (Upraviť = ceruzka, Zmazať = kôš).
+   Text ostáva v aria-label (pre čítačky) a v bublinke po prejdení myšou (title). */
+.tlacidlo-ikona {
+  display: inline-grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  vertical-align: middle;
+  transition: background 0.15s, color 0.15s, opacity 0.12s;
+}
+
+/* Malé tlačidlo s ikonou A textom (napr. ▶ Štart) */
+.tlacidlo-male .ikona {
+  width: 14px;
+  height: 14px;
+  vertical-align: -2px;
+  margin-right: 4px;
+}
+
+/* Na počítači (kde sa dá prejsť myšou) sú ikonové tlačidlá skryté, kým nie si nad riadkom.
+   Na dotykovej obrazovke sú vidieť stále. */
+@media (hover: hover) {
+  .tlacidlo-ikona {
+    opacity: 0;
+  }
+
+  tr:hover .tlacidlo-ikona,
+  tr:focus-within .tlacidlo-ikona,
+  li:hover .tlacidlo-ikona,
+  li:focus-within .tlacidlo-ikona,
+  .upravovany .tlacidlo-ikona {
+    opacity: 1;
+  }
+}
+
+@media (hover: none) {
+  .tlacidlo-ikona {
+    width: 40px;
+    height: 40px;
+  }
+}
+
+/* Vypnuté tlačidlo (napr. Štart, kým bežia iné stopky) */
+button:disabled,
+.akcie button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* Viditeľný rámik pri ovládaní klávesnicou (Tab) */
+button:focus-visible,
+summary:focus-visible {
+  outline: none;
+  box-shadow: var(--kruh);
+}
+
+.tlacidla-zalohy {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+/* ===== Tabuľka ===== */
+/* Rámček okolo tabuľky záznamov: najviac 480 px vysoký, ďalšie riadky sa rolujú */
+.tabulka-obal {
+  max-height: 70vh; /* vh = výška okna */
+  overflow-y: auto; /* posuvník sa ukáže iba vtedy, keď je ho treba */
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.93rem;
+}
+
+/* Hlavička ostane pri rolovaní prilepená hore */
+.tabulka-obal thead th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: var(--karta); /* aby cez ňu nepresvitali riadky pod ňou */
+}
+
+th,
+td {
+  text-align: left;
+  padding: 12px 10px;
+  border-bottom: 1px solid var(--okraj);
+  vertical-align: top;
+}
+
+th {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--text-slabsi);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding-top: 8px;
+  padding-bottom: 8px;
+}
+
+tbody tr {
+  transition: background 0.12s;
+}
+
+/* Riadok pod myšou sa jemne zvýrazní */
+tbody tr:hover {
+  background: var(--riadok-pod-mysou);
+}
+
+tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+/* Čísla zarovnané doprava a rovnako široké, aby sa dali ľahko porovnávať */
+.cislo {
+  text-align: right;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Dátum v tabuľke sa nezalomí na dva riadky */
+td.datum {
+  white-space: nowrap;
+}
+
+/* Sivé "(nepovinné)" pri názve políčka */
+.nepovinne {
+  font-weight: 400;
+  color: var(--text-slabsi);
+}
+
+/* Sivá pomlčka v tabuľke, keď záznam nemá poznámku */
+.bez-poznamky {
+  color: var(--text-slabsi);
+}
+
+/* Menší sivý text pod hodinami, napr. "08:00 – 16:30 · obed" */
+.detail {
+  display: block;
+  font-size: 0.8rem;
+  color: var(--text-slabsi);
+  white-space: normal; /* dlhší text (napr. dôvod prerušenia) sa môže zalomiť */
+}
+
+.akcie {
+  text-align: right;
+  white-space: nowrap;
+}
+
+.akcie button + button {
+  margin-left: 2px;
+}
+
+/* Riadok, ktorý práve upravujeme */
+tr.upravovany,
+tr.upravovany:hover {
+  background: var(--zvyraznenie);
+}
+
+/* ===== Súčet za mesiac ===== */
+.prepinac-mesiacov {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 20px;
+}
+
+.nazov-mesiaca {
+  font-weight: 600;
+  min-width: 9em;
+  text-align: center;
+}
+
+/* Okrúhle tlačidlá ‹ › */
+.tlacidlo-sipka {
+  font: inherit;
+  font-size: 1.2rem;
+  line-height: 1;
+  width: 36px;
+  height: 36px;
+  border: 1px solid var(--okraj);
+  border-radius: 50%;
+  background: var(--karta);
+  color: var(--hlavna);
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.tlacidlo-sipka:hover {
+  background: var(--zvyraznenie);
+}
+
+/* Tlačidlo, ktoré vyzerá ako odkaz */
+.tlacidlo-odkaz {
+  font: inherit;
+  font-size: 0.9rem;
+  font-weight: 500;
+  border: none;
+  background: none;
+  color: var(--hlavna);
+  cursor: pointer;
+  padding: 4px 6px;
+  border-radius: 6px;
+}
+
+.tlacidlo-odkaz:hover {
+  text-decoration: underline;
+}
+
+/* Hodiny / Zárobok / Počet záznamov ako dlaždice */
+.sucet-riadok {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+}
+
+.sucet-riadok > div {
+  background: var(--pozadie);
+  border-radius: 12px;
+  padding: 14px 16px;
+}
+
+.sucet-popis {
+  display: block;
+  font-size: 0.8rem;
+  color: var(--text-slabsi);
+}
+
+.sucet-hodnota {
+  font-size: 1.55rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ===== Tlačidlá s uloženými sadzbami (pod políčkom sadzby) ===== */
+.sadzby-tlacidla {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.tlacidlo-sadzba {
+  font: inherit;
+  font-size: 0.82rem;
+  padding: 4px 12px;
+  border: 1px solid var(--okraj);
+  border-radius: 999px; /* zaoblené ako "pilulka" */
+  background: transparent;
+  color: var(--text-slabsi);
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.tlacidlo-sadzba:hover {
+  border-color: var(--jemna);
+  color: var(--text);
+}
+
+/* Práve vybraná sadzba */
+.tlacidlo-sadzba[aria-pressed="true"] {
+  border-color: var(--jemna);
+  background: var(--zvyraznenie);
+  color: var(--hlavna);
+  font-weight: 600;
+}
+
+/* Šípka pri rozbaľovacích častiach (napr. "+ Pridať položku") v doplnkovej farbe */
+summary::marker {
+  color: var(--druha);
+}
+
+/* "Posledná záloha: ..." v Nastaveniach */
+.zaloha-stav {
+  margin: -6px 0 16px;
+  font-size: 0.88rem;
+  font-weight: 500;
+}
+
+.zaloha-stav.stara {
+  color: var(--upozornenie);
+}
+
+/* Automatické ukladanie do súboru: oddelené čiarou od ručnej zálohy */
+.subor-dat {
+  padding-bottom: 20px;
+  margin-bottom: 16px;
+  border-bottom: 1px solid var(--okraj);
+}
+
+.subor-dat .slabsi {
+  margin-bottom: 14px;
+}
+
+/* Treba povoliť / načítať / zápis zlyhal */
+.subor-dat .slabsi.stara {
+  color: var(--upozornenie);
+  font-weight: 500;
+}
+
+/* Ručná záloha: text o poslednej zálohe hneď pod nadpisom */
+.subor-dat + h3 + .zaloha-stav {
+  margin-top: 0;
+}
+
+/* Zoznam sadzieb, projektov a položiek */
+.zoznam-sadzieb {
+  list-style: none;
+  margin: 0 0 16px;
+  padding: 0;
+}
+
+.zoznam-sadzieb li {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px 16px;
+  padding: 12px 10px;
+  border-bottom: 1px solid var(--okraj);
+  border-radius: 8px;
+}
+
+.zoznam-sadzieb li:last-child {
+  border-bottom: 0;
+}
+
+.zoznam-sadzieb li.upravovany {
+  background: var(--zvyraznenie);
+}
+
+/* Zbalený formulár "+ Pridať položku" / "+ Nový projekt" */
+.pridanie-jednorazovej summary {
+  cursor: pointer;
+  color: var(--hlavna);
+  font-weight: 600;
+  margin-bottom: 12px;
+  padding: 4px 6px;
+  border-radius: 6px;
+  width: fit-content;
+}
+
+/* Suma pri jednorazovej položke */
+.suma-polozky {
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+/* ===== Dane a odvody ===== */
+/* Výrazné upozornenie (farebný pruh vľavo) */
+.upozornenie {
+  margin: 0 0 18px;
+  padding: 12px 16px;
+  border-left: 3px solid var(--upozornenie);
+  background: var(--zvyraznenie);
+  border-radius: 10px;
+  font-size: 0.88rem;
+}
+
+/* Hlavička záložky Dane: nadpis vľavo, odhad príjmu vpravo */
+.hlavicka-dane {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: 12px 24px;
+}
+
+.odhad-prijmu {
+  text-align: right;
+  max-width: 24em;
+}
+
+.odhad-veta {
+  margin: 6px 0 0;
+  font-size: 0.9rem;
+  color: var(--text-slabsi);
+}
+
+.odhad-pole {
+  text-align: left;
+}
+
+.odhad-riadok {
+  display: flex;
+  gap: 8px;
+}
+
+.odhad-riadok input[type="text"] {
+  width: 10em;
+}
+
+.odhad-pole .slabsi {
+  margin: 6px 0 0;
+  font-size: 0.82rem;
+}
+
+/* Upozornenie ako jeden riadok – celý text po rozbalení */
+.upozornenie-dane {
+  margin-bottom: 20px;
+}
+
+.upozornenie-dane summary {
+  cursor: pointer;
+}
+
+.upozornenie-dane p {
+  margin: 8px 0 0;
+}
+
+/* Dlaždice v Daniach: tri vedľa seba, nedá sa na ne kliknúť */
+.dlazdice.dlazdice-dane {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.dlazdica.staticka {
+  cursor: default;
+}
+
+.dlazdica.staticka:hover {
+  border-color: var(--okraj);
+}
+
+.dlazdice-dane .dlazdica-pod {
+  white-space: normal;
+}
+
+/* Tabuľka mesačných odvodov: obdobie, kým platí, je zvýraznené */
+.tabulka-odvodov tr.aktualne {
+  background: var(--zvyraznenie);
+}
+
+.tabulka-odvodov tbody tr:hover {
+  background: none;
+}
+
+.tabulka-odvodov tr.aktualne:hover {
+  background: var(--zvyraznenie);
+}
+
+.tabulka-odvodov td.spolu {
+  font-weight: 600;
+}
+
+.poznamka-dane {
+  margin: 12px 0 0;
+  font-size: 0.85rem;
+}
+
+/* Podrobný výpočet dane: zbalené riadky "Rok 2026 · daň 0,00 €" */
+.vypocet-dane {
+  border-top: 1px solid var(--okraj);
+  padding: 12px 0;
+}
+
+.vypocet-dane:last-child {
+  padding-bottom: 0;
+}
+
+.vypocet-dane summary {
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.vypocet-dane table {
+  margin-top: 10px;
+}
+
+/* Tabuľka výpočtu za rok: popis vľavo, suma vpravo */
+.tabulka-dane td {
+  padding: 8px 10px;
+}
+
+.tabulka-dane tbody tr:hover {
+  background: none;
+}
+
+.tabulka-dane td:last-child {
+  text-align: right;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.tabulka-dane tr.vysledok td {
+  font-weight: 700;
+  border-top: 2px solid var(--okraj);
+}
+
+/* Časová os: zoznam "kedy – čo – koľko" */
+.casova-os {
+  list-style: none;
+  margin: 0 0 16px;
+  padding: 0;
+}
+
+.casova-os li {
+  display: flex;
+  gap: 12px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--okraj);
+}
+
+.casova-os li:last-child {
+  border-bottom: 0;
+  padding-bottom: 0;
+}
+
+.karta > .casova-os:last-child {
+  margin-bottom: 0;
+}
+
+.casova-os .kedy {
+  flex: 0 0 10.5em;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.casova-os .udalost {
+  flex: 0 0 auto;
+}
+
+/* Zaškrtávacie políčka v profile pod sebou */
+.zaskrtavacie-pod-sebou {
+  flex-direction: column;
+  gap: 6px;
+}
+
+.napoveda {
+  margin: 0 0 8px 30px;
+  font-size: 0.8rem;
+}
+
+/* Štítok, napr. "predvolená" alebo "beží" */
+.stitok {
+  display: inline-block;
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 2px 9px;
+  margin-left: 6px;
+  border-radius: 999px;
+  background: var(--zvyraznenie);
+  color: var(--druha);
+  vertical-align: 1px;
+}
+
+/* ===== Prázdny stav (keď niekde ešte nič nie je) ===== */
+/* Ikona v krúžku, krátky text a tlačidlo s ďalším krokom – všetko v strede */
+.prazdny-stav {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  text-align: center;
+  padding: 28px 16px;
+  color: var(--text-slabsi);
+}
+
+.prazdny-stav .ikona {
+  width: 44px;
+  height: 44px;
+  padding: 11px;
+  border-radius: 50%;
+  background: var(--zvyraznenie);
+  color: var(--druha);
+}
+
+.prazdny-stav p {
+  margin: 0;
+  max-width: 34em; /* kratšie riadky sa lepšie čítajú */
+  font-size: 0.92rem;
+}
+
+/* Menší prázdny stav (napr. pri jednorazových položkách, kde je formulár hneď pod ním) */
+.prazdny-stav.maly {
+  flex-direction: row;
+  justify-content: center;
+  padding: 14px 12px;
+  text-align: left;
+}
+
+.prazdny-stav.maly .ikona {
+  width: 32px;
+  height: 32px;
+  padding: 8px;
+  flex: none;
+}
+
+/* ===== Prehľad ===== */
+/* Štyri dlaždice s číslami za tento mesiac */
+.dlazdice {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+/* Dlaždica je tlačidlo (klik prepne záložku), ale vyzerá ako karta */
+.dlazdica {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  background: var(--karta);
+  border: 1px solid var(--okraj);
+  border-radius: var(--polomer);
+  box-shadow: var(--tien);
+  padding: 16px 18px;
+  cursor: pointer;
+  transition: border-color 0.15s, transform 0.15s;
+}
+
+.dlazdica:hover {
+  border-color: var(--jemna);
+}
+
+.dlazdica-popis {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.8rem;
+  color: var(--text-slabsi);
+}
+
+.dlazdica-popis .ikona {
+  width: 15px;
+  height: 15px;
+  color: var(--druha);
+}
+
+.dlazdica-hodnota {
+  font-size: 1.55rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.dlazdica-pod {
+  font-size: 0.78rem;
+  color: var(--text-slabsi);
+}
+
+/* Dva stĺpce: formulár (širší) a pravý stĺpec */
+.prehlad-mriezka {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
+  gap: 20px;
+  align-items: start;
+}
+
+/* Karty v Prehľade majú medzery z mriežky, nie vlastný spodný okraj */
+.prehlad-mriezka .karta {
+  margin-bottom: 0;
+}
+
+.prehlad-pravy-stlpec {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* Rýchly štart: tlačidlá s názvami projektov */
+.rychly-start-zoznam {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.tlacidlo-start {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  font: inherit;
+  text-align: left;
+  color: var(--text);
+  background: var(--pozadie);
+  border: 1px solid var(--okraj);
+  border-radius: 12px;
+  padding: 10px 12px;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+}
+
+.tlacidlo-start:hover {
+  border-color: var(--jemna);
+  background: var(--zvyraznenie);
+}
+
+/* Okrúhla ikona ▶ vľavo */
+.tlacidlo-start .start-ikona {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--hlavna);
+  color: var(--na-hlavnej);
+  flex: none;
+}
+
+.tlacidlo-start .start-ikona .ikona {
+  width: 14px;
+  height: 14px;
+  margin-left: 2px; /* trojuholník opticky v strede */
+}
+
+.tlacidlo-start strong {
+  display: block;
+  font-weight: 600;
+}
+
+.tlacidlo-start .detail {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Posledné záznamy: kompaktná tabuľka bez hlavičky */
+#posledne-tabulka td {
+  padding: 10px 6px;
+}
+
+.vsetky-zaznamy {
+  margin-top: 10px;
+}
+
+/* ===== Graf po mesiacoch ===== */
+.karta-grafu {
+  margin-top: 20px;
+}
+
+.graf-hlavicka {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.graf-hlavicka h2 {
+  margin-bottom: 2px;
+}
+
+.graf-podnadpis {
+  margin: 0;
+  font-size: 0.85rem;
+}
+
+/* Prepínač Zárobok / Hodiny (rovnaký vzhľad ako Od – do / Počet hodín) */
+.rezim-tlacidlo {
+  font: inherit;
+  font-size: 0.88rem;
+  font-weight: 500;
+  color: var(--text-slabsi);
+  background: none;
+  border: 0;
+  border-radius: 8px;
+  padding: 6px 14px;
+  cursor: pointer;
+}
+
+.rezim-tlacidlo[aria-pressed="true"] {
+  background: var(--karta);
+  color: var(--text);
+  font-weight: 600;
+  box-shadow: var(--tien);
+}
+
+/* Obal grafu: bublina sa umiestňuje voči nemu (position: relative) */
+.graf-obal {
+  position: relative;
+}
+
+.graf-obal svg {
+  display: block;
+  width: 100%;
+  overflow: visible;
+}
+
+/* Vodorovné čiary mriežky: tenké, jemné, plné (nie prerušované) */
+.graf-mriezka {
+  stroke: var(--okraj);
+  stroke-width: 1;
+}
+
+.graf-os-text {
+  fill: var(--text-slabsi);
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Tento mesiac je v popise zvýraznený */
+.graf-os-text.tento {
+  fill: var(--text);
+  font-weight: 600;
+}
+
+/* Hodnota nad stĺpcom tohto mesiaca */
+.graf-hodnota {
+  fill: var(--text);
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.graf-stlpec {
+  fill: var(--graf-stlpec);
+  transition: fill 0.12s;
+}
+
+/* Priehľadná plocha cez celú výšku mesiaca – myšou ju trafíš ľahšie ako úzky stĺpec */
+.graf-cast {
+  cursor: pointer;
+  outline: none;
+}
+
+.graf-zasah {
+  fill: transparent;
+}
+
+.graf-cast:hover .graf-stlpec,
+.graf-cast:focus-visible .graf-stlpec {
+  fill: var(--graf-stlpec-hover);
+}
+
+/* Pri ovládaní klávesnicou jemne podfarbený celý mesiac */
+.graf-cast:focus-visible .graf-zasah {
+  fill: var(--zvyraznenie);
+}
+
+/* Bublina s hodnotou: hodnota výrazne, mesiac a detaily pod ňou */
+.graf-bublina {
+  position: absolute;
+  z-index: 2;
+  pointer-events: none; /* aby bublina neprekážala myši */
+  transform: translate(-50%, calc(-100% - 10px));
+  white-space: nowrap;
+  background: var(--karta-pevna);
+  border: 1px solid var(--okraj);
+  border-radius: 10px;
+  box-shadow: var(--tien);
+  padding: 8px 12px;
+  font-size: 0.82rem;
+  color: var(--text-slabsi);
+}
+
+.graf-bublina strong {
+  display: block;
+  font-size: 1rem;
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+}
+
+.graf-tabulka summary {
+  cursor: pointer;
+  color: var(--hlavna);
+  font-size: 0.88rem;
+  font-weight: 500;
+  margin-top: 8px;
+  width: fit-content;
+}
+
+.graf-tabulka table {
+  margin-top: 8px;
+}
+
+/* ===== Projekty a stopky ===== */
+/* Karta bežiacich stopiek: tmavá, aby bola hneď vidieť */
+.stopky {
+  background: var(--stopky);
+  color: var(--stopky-text);
+  border-radius: var(--polomer);
+  box-shadow: var(--tien);
+  padding: 20px 22px;
+  margin-bottom: 20px;
+}
+
+.stopky-projekt {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  font-weight: 600;
+  font-size: 0.92rem;
+  color: var(--stopky-slabsi);
+}
+
+/* Veľký bežiaci čas; tabular-nums = číslice rovnako široké, aby text "neskákal" */
+.stopky-cas {
+  margin: 4px 0 2px;
+  font-size: 2.4rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+}
+
+.stopky .stopky-info {
+  color: var(--stopky-slabsi);
+  margin-bottom: 16px;
+  font-variant-numeric: tabular-nums;
+}
+
+.stopky label,
+.stopky .nepovinne {
+  color: var(--stopky-slabsi);
+}
+
+.stopky input[type="text"] {
+  background: rgba(251, 228, 216, 0.08);
+  border-color: rgba(251, 228, 216, 0.25);
+  color: var(--stopky-text);
+}
+
+.stopky input[type="text"]::placeholder {
+  color: rgba(251, 228, 216, 0.5);
+}
+
+.tlacidla-stopiek {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+/* Tlačidlá na tmavej karte stopiek majú obrátené farby */
+.stopky .tlacidlo {
+  background: #fbe4d8;
+  border-color: #fbe4d8;
+  color: #2b124c;
+}
+
+.stopky .tlacidlo:hover {
+  background: #fff;
+  border-color: #fff;
+}
+
+.stopky .tlacidlo-druhe {
+  background: transparent;
+  border-color: rgba(251, 228, 216, 0.35);
+  color: var(--stopky-text);
+}
+
+.stopky .tlacidlo-druhe:hover {
+  background: rgba(251, 228, 216, 0.1);
+}
+
+.stopky .tlacidlo-male {
+  margin-left: auto;
+  color: var(--stopky-slabsi);
+}
+
+.stopky .tlacidlo-male:hover {
+  background: rgba(251, 228, 216, 0.1);
+  color: var(--stopky-text);
+}
+
+/* Súčet pri projekte, napr. "23 h 45 min · 593,75 €" */
+.projekt-sucet {
+  display: block;
+  font-size: 0.82rem;
+  color: var(--text-slabsi);
+  font-variant-numeric: tabular-nums;
+}
+
+.detail-projektu {
+  background: var(--pozadie);
+  border: 1px solid var(--okraj);
+  border-radius: 12px;
+  padding: 14px 18px;
+  margin-bottom: 16px;
+}
+
+.detail-projektu tbody tr:hover {
+  background: var(--riadok-pod-mysou);
+}
+
+.uzavrete-projekty summary {
+  cursor: pointer;
+  color: var(--text-slabsi);
+  margin-bottom: 12px;
+  width: fit-content;
+}
+
+.napoveda-projektu {
+  font-size: 0.82rem;
+}
+
+/* Názov projektu v tabuľke záznamov */
+.nazov-projektu {
+  font-weight: 600;
+  color: var(--hlavna);
+}
+
+/* ===== Vlastné okno s otázkou (namiesto šedého okna prehliadača) ===== */
+.okno {
+  width: calc(100% - 32px);
+  max-width: 420px;
+  padding: 0; /* odsadenie má vnútorný formulár – klik mimo neho = klik na tmavé pozadie */
+  border: 1px solid var(--okraj);
+  border-radius: 18px;
+  background: var(--karta);
+  color: var(--text);
+  box-shadow: 0 24px 60px rgba(25, 0, 25, 0.25);
+}
+
+/* ::backdrop = stmavené pozadie za oknom */
+.okno::backdrop {
+  background: rgba(25, 0, 25, 0.45);
+}
+
+/* Jemné zobrazenie okna (zväčšenie z 96 % a zosvetlenie) */
+.okno[open] {
+  animation: okno-zobraz 0.16s ease-out;
+}
+
+.okno[open]::backdrop {
+  animation: pozadie-zobraz 0.16s ease-out;
+}
+
+@keyframes okno-zobraz {
+  from { opacity: 0; transform: scale(0.96); }
+}
+
+@keyframes pozadie-zobraz {
+  from { opacity: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .okno[open],
+  .okno[open]::backdrop {
+    animation: none;
+  }
+}
+
+.okno-obsah {
+  padding: 26px 26px 22px;
+}
+
+/* Ikona v krúžku hore */
+.okno-ikona {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: var(--zvyraznenie);
+  color: var(--hlavna);
+  margin-bottom: 14px;
+}
+
+.okno-ikona .ikona {
+  width: 22px;
+  height: 22px;
+}
+
+/* Pri mazaní je krúžok jemne červený */
+.okno.nebezpecne .okno-ikona {
+  background: rgba(179, 38, 30, 0.1);
+  color: var(--chyba);
+}
+
+.okno h2 {
+  margin: 0 0 8px;
+  font-size: 1.15rem;
+}
+
+/* pre-line: znak nového riadku (\n) v texte sa zobrazí ako nový riadok */
+.okno p {
+  margin: 0 0 22px;
+  color: var(--text-slabsi);
+  font-size: 0.93rem;
+  white-space: pre-line;
+}
+
+.okno-tlacidla {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+/* Červené tlačidlo pre nevratné akcie (Zmazať) */
+.tlacidlo-nebezpecne {
+  background: var(--chyba);
+  border-color: var(--chyba);
+  color: #fff;
+}
+
+.tlacidlo-nebezpecne:hover {
+  background: #8f1d17;
+  border-color: #8f1d17;
+}
+
+/* V tmavom režime je červená svetlá (#ff8a80) – biely text by sa na nej nedal čítať */
+:root[data-theme="dark"] .tlacidlo-nebezpecne {
+  color: #190019;
+}
+
+:root[data-theme="dark"] .tlacidlo-nebezpecne:hover {
+  background: #ffb4ab;
+  border-color: #ffb4ab;
+}
+
+/* ===== Správa dole na obrazovke ===== */
+.sprava {
+  position: fixed;
+  left: 50%;
+  bottom: 20px;
+  transform: translateX(-50%);
+  width: calc(100% - 32px);
+  max-width: 560px;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px 16px;
+  border-radius: 12px;
+  background: #2b124c;
+  color: #fbe4d8;
+  box-shadow: 0 8px 28px rgba(25, 0, 25, 0.25);
+}
+
+.sprava-chyba {
+  background: var(--chyba);
+  color: #fff;
+}
+
+.sprava span {
+  flex: 1;
+}
+
+.sprava-zavriet {
+  font: inherit;
+  font-size: 1.2rem;
+  line-height: 1;
+  border: none;
+  background: none;
+  color: inherit;
+  cursor: pointer;
+}
+
+/* ===== Výkaz práce ===== */
+.vykaz-ovladanie {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 20px;
+  margin-top: 20px;
+  padding-top: 18px;
+  border-top: 1px solid var(--okraj);
+}
+
+/* Na obrazovke je výkaz skrytý – ukáže sa iba pri tlači */
+.vykaz {
+  display: none;
+}
+
+/* ===== Tekuté sklo (liquid glass) – zapína ho trieda "sklo" na <html> (prepínač v Nastaveniach) ===== */
+/* Princíp: karta je polopriehľadná a backdrop-filter rozmaže všetko, čo je za ňou (farebné škvrny).
+   Svetlá hrana hore a odlesk pod myšou (premenné --mx, --my nastavuje app.js) robia dojem skla. */
+:root.sklo {
+  --sklo: rgba(255, 250, 247, 0.55);          /* farba skla (karty, dlaždice) */
+  --sklo-silne: rgba(255, 250, 247, 0.85);    /* menej priesvitné sklo (okno s otázkou) */
+  --sklo-vnutri: rgba(255, 255, 255, 0.45);   /* políčka a dlaždice vnútri skla */
+  --sklo-pevne: rgba(255, 250, 247, 0.85);    /* prilepená hlavička tabuľky a pod. */
+  --sklo-okraj: rgba(255, 255, 255, 0.75);
+  --sklo-hrana: inset 0 1px 0 rgba(255, 255, 255, 0.9), inset 0 -1px 0 rgba(133, 79, 108, 0.08);
+  --sklo-tien: 0 10px 30px rgba(43, 18, 76, 0.08);
+  --sklo-odlesk: rgba(255, 255, 255, 0.6);
+  --sklo-rozmazanie: blur(22px) saturate(170%);
+  --sklo-panel: rgba(43, 18, 76, 0.8);
+  --skvrna-1: rgba(223, 182, 178, 0.9);
+  --skvrna-2: rgba(133, 79, 108, 0.45);
+  --skvrna-3: rgba(251, 228, 216, 1);
+}
+
+:root.sklo[data-theme="dark"] {
+  --sklo: rgba(43, 18, 76, 0.5);
+  --sklo-silne: rgba(43, 18, 76, 0.85);
+  --sklo-vnutri: rgba(25, 0, 25, 0.35);
+  --sklo-pevne: rgba(43, 18, 76, 0.9);
+  --sklo-okraj: rgba(251, 228, 216, 0.14);
+  --sklo-hrana: inset 0 1px 0 rgba(251, 228, 216, 0.16), inset 0 -1px 0 rgba(0, 0, 0, 0.2);
+  --sklo-tien: 0 10px 30px rgba(0, 0, 0, 0.3);
+  --sklo-odlesk: rgba(251, 228, 216, 0.12);
+  --sklo-panel: rgba(18, 0, 18, 0.6);
+  --skvrna-1: rgba(82, 43, 91, 0.9);
+  --skvrna-2: rgba(133, 79, 108, 0.45);
+  --skvrna-3: rgba(43, 18, 76, 1);
+}
+
+/* Prehliadač bez backdrop-filter: sklo bude takmer nepriehľadné, aby sa text dal čítať */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  :root.sklo { --sklo: rgba(255, 250, 247, 0.92); }
+  :root.sklo[data-theme="dark"] { --sklo: rgba(43, 18, 76, 0.92); }
+}
+
+/* Farebné škvrny za sklom: pevne za celou stránkou (z-index: -1), pomaly plávajú */
+.sklo-pozadie {
+  display: none;
+}
+
+.sklo .sklo-pozadie {
+  display: block;
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  overflow: hidden;
+  pointer-events: none;
+  /* jemný posun proti pohybu myši (--px, --py nastavuje app.js) */
+  transform: translate(var(--px, 0px), var(--py, 0px));
+  transition: transform 0.8s ease-out;
+}
+
+.sklo-pozadie span {
+  position: absolute;
+  width: 60vmax;  /* vmax = percento väčšej strany okna */
+  height: 60vmax;
+  border-radius: 50%;
+  animation: skvrna 30s ease-in-out infinite alternate;
+}
+
+.sklo-pozadie span:nth-child(1) {
+  top: -25vmax;
+  left: -15vmax;
+  background: radial-gradient(circle, var(--skvrna-1), transparent 65%);
+}
+
+.sklo-pozadie span:nth-child(2) {
+  bottom: -30vmax;
+  right: -20vmax;
+  background: radial-gradient(circle, var(--skvrna-2), transparent 65%);
+  animation-duration: 38s;
+  animation-delay: -12s; /* záporné oneskorenie = škvrny sa nehýbu rovnako */
+}
+
+.sklo-pozadie span:nth-child(3) {
+  top: 25%;
+  left: 35%;
+  width: 45vmax;
+  height: 45vmax;
+  background: radial-gradient(circle, var(--skvrna-3), transparent 65%);
+  animation-duration: 45s;
+  animation-delay: -25s;
+}
+
+@keyframes skvrna {
+  50% { transform: translate(8vmax, 6vmax) scale(1.1); }
+  100% { transform: translate(-6vmax, 4vmax) scale(0.95); }
+}
+
+/* Samotné sklo: karty, dlaždice, okno s otázkou */
+.sklo .karta,
+.sklo .dlazdica,
+.sklo .okno {
+  background-color: var(--sklo);
+  /* odlesk: svetlý kruh na mieste myši (bez myši je mimo karty, takže ho nevidno) */
+  background-image: radial-gradient(circle 280px at var(--mx, 50%) var(--my, -300px), var(--sklo-odlesk), transparent 70%);
+  border-color: var(--sklo-okraj);
+  box-shadow: var(--sklo-hrana), var(--sklo-tien);
+  -webkit-backdrop-filter: var(--sklo-rozmazanie); /* Safari */
+  backdrop-filter: var(--sklo-rozmazanie);
+  /* vnútri skla sú aj políčka a malé dlaždice priesvitné (premenné platia pre všetko vo vnútri) */
+  --pozadie: var(--sklo-vnutri);
+  --karta: var(--sklo-pevne);
+}
+
+.sklo .okno {
+  background-color: var(--sklo-silne);
+}
+
+.sklo .okno::backdrop {
+  background: rgba(25, 0, 25, 0.3);
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+}
+
+/* Dlaždica sa pod myšou jemne nadvihne a pri kliknutí pružne stlačí */
+.sklo .dlazdica {
+  transition: border-color 0.15s, transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.sklo .dlazdica:not(.staticka):hover {
+  border-color: var(--jemna);
+  transform: translateY(-2px);
+}
+
+.sklo .dlazdica:not(.staticka):active {
+  transform: scale(0.97);
+  transition-duration: 0.1s;
+}
+
+/* Prilepená hlavička tabuľky: riadky pod ňou sa rozmažú */
+.sklo .tabulka-obal thead th {
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
+}
+
+/* Karta bežiacich stopiek: tmavé sklo */
+.sklo .stopky {
+  background-color: rgba(43, 18, 76, 0.82);
+  box-shadow: inset 0 1px 0 rgba(251, 228, 216, 0.18), var(--sklo-tien);
+  -webkit-backdrop-filter: var(--sklo-rozmazanie);
+  backdrop-filter: var(--sklo-rozmazanie);
+}
+
+/* Bočný panel: tmavé sklo, aktívna záložka ako svetlejšia sklenená "kvapka" */
+.sklo .panel {
+  background: var(--sklo-panel);
+  box-shadow: inset -1px 0 0 rgba(251, 228, 216, 0.08);
+  -webkit-backdrop-filter: var(--sklo-rozmazanie);
+  backdrop-filter: var(--sklo-rozmazanie);
+}
+
+.sklo .nav-polozka[aria-current="page"] {
+  background: linear-gradient(180deg, rgba(251, 228, 216, 0.16), rgba(251, 228, 216, 0.07));
+  box-shadow: inset 0 1px 0 rgba(251, 228, 216, 0.2), 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+/* Hlavné tlačidlá: lesk hore a pružné stlačenie */
+.sklo .tlacidlo:not(.tlacidlo-druhe) {
+  background-image: linear-gradient(180deg, rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0) 60%);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.25), 0 4px 14px rgba(82, 43, 91, 0.25);
+}
+
+.sklo .tlacidlo,
+.sklo .tlacidlo-start {
+  transition: background-color 0.15s, border-color 0.15s, transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.sklo .tlacidlo:active,
+.sklo .tlacidlo-start:active {
+  transform: scale(0.96);
+  transition-duration: 0.1s;
+}
+
+/* Správa dole: tiež sklo */
+.sklo .sprava:not(.sprava-chyba) {
+  background: rgba(43, 18, 76, 0.85);
+  -webkit-backdrop-filter: var(--sklo-rozmazanie);
+  backdrop-filter: var(--sklo-rozmazanie);
+}
+
+/* Na mobile: spodná lišta ako plávajúca sklenená kapsula */
+@media (max-width: 760px) {
+  .sklo .spodna-nav {
+    left: 10px;
+    right: 10px;
+    bottom: calc(10px + env(safe-area-inset-bottom));
+    padding: 6px;
+    border: 1px solid var(--sklo-okraj);
+    border-radius: 26px;
+    background: var(--sklo);
+    box-shadow: var(--sklo-hrana), 0 10px 30px rgba(43, 18, 76, 0.18);
+    -webkit-backdrop-filter: var(--sklo-rozmazanie);
+    backdrop-filter: var(--sklo-rozmazanie);
+  }
+
+  .sklo .spodna-nav button {
+    border-radius: 20px;
+  }
+
+  .sklo .spodna-nav button[aria-current="page"] {
+    background: var(--sklo-vnutri);
+    box-shadow: var(--sklo-hrana);
+  }
+
+  .sklo .sprava {
+    bottom: calc(86px + env(safe-area-inset-bottom));
+  }
+}
+
+/* Kto má v systéme vypnuté animácie: škvrny stoja a nič sa nehýbe */
+@media (prefers-reduced-motion: reduce) {
+  .sklo-pozadie span {
+    animation: none;
+  }
+
+  .sklo .sklo-pozadie,
+  .sklo .dlazdica,
+  .sklo .tlacidlo,
+  .sklo .tlacidlo-start {
+    transition: none;
+  }
+}
+
+/* Pri tlači žiadne sklo ani škvrny */
+@media print {
+  .sklo-pozadie {
+    display: none !important;
+  }
+
+  .sklo .karta,
+  .sklo .dlazdica,
+  .sklo .stopky {
+    background: none;
+    box-shadow: none;
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+}
+
+/* Vzhľad v Nastaveniach: prepínače pod sebou */
+#nastavenia-vzhlad .zaskrtavacie {
+  display: flex;
+  margin-bottom: 10px;
+}
+
+/* @media print = pravidlá, ktoré platia iba pri tlači (aj pri "Uložiť ako PDF") */
+@media print {
+  @page {
+    margin: 15mm;
+  }
+
+  /* Bežná tlač stránky (Cmd + P): bez navigácie a bez tieňov */
+  .panel,
+  .spodna-nav,
+  .sprava {
+    display: none !important;
+  }
+
+  .appka {
+    display: block;
+  }
+
+  .karta,
+  .dlazdica {
+    box-shadow: none;
+  }
+
+  /* Pri tlači výkazu skryjeme celú appku a ukážeme iba výkaz */
+  body.tlac-vykazu > *:not(#vykaz) {
+    display: none !important;
+  }
+
+  body.tlac-vykazu {
+    background: #fff;
+    color: #000;
+  }
+
+  body.tlac-vykazu .vykaz {
+    display: block;
+    font-size: 10.5pt;
+  }
+
+  .vykaz h1 {
+    font-size: 18pt;
+    margin: 0 0 4px;
+  }
+
+  .vykaz p {
+    margin: 0 0 12px;
+  }
+
+  .vykaz table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: inherit; /* veľkosť písma z výkazu, nie z tabuliek appky */
+  }
+
+  /* !important: bežné pravidlá appky (napr. bez čiary pod posledným riadkom) tu neplatia */
+  .vykaz th,
+  .vykaz td {
+    border: 1px solid #999 !important;
+    padding: 4px 6px;
+    color: #000;
+    vertical-align: top;
+    text-transform: none;
+    letter-spacing: normal;
+  }
+
+  .vykaz th {
+    background: #eee;
+    font-size: 9.5pt;
+  }
+
+  .vykaz tfoot td {
+    font-weight: 700;
+  }
+
+  /* Päta so súčtom sa tlačí iba raz na konci (inak ju prehliadač opakuje na každej strane
+     a vyzerá to, akoby "Spolu" bolo iba za prvú stranu). Hlavička sa opakovať smie. */
+  .vykaz tfoot {
+    display: table-row-group;
+  }
+
+  /* Dátum, deň, čas, odpracované, sadzba a suma sa nezalomia na dva riadky
+     (prestávky a poznámka sa zalomiť môžu) */
+  .vykaz td:nth-child(1),
+  .vykaz td:nth-child(2),
+  .vykaz td:nth-child(3),
+  .vykaz td:nth-child(5),
+  .vykaz td:nth-child(6),
+  .vykaz td:nth-child(7) {
+    white-space: nowrap;
+  }
+
+  /* V riadku "Spolu" je prvá bunka cez 4 stĺpce, preto tam platí iné poradie – zalomiť sa nemusí nič */
+  .vykaz tfoot td {
+    white-space: nowrap;
+  }
+
+  /* Riadok tabuľky sa nerozdelí na dve strany */
+  .vykaz tr {
+    break-inside: avoid;
+  }
+
+  /* Jednorazové položky (nadpis + tabuľka + súčet) sa nerozdelia na dve strany */
+  .vykaz-polozky {
+    break-inside: avoid;
+  }
+
+  .vykaz h2 {
+    font-size: 13pt;
+    margin: 18px 0 6px;
+  }
+
+  .vykaz .vykaz-spolu {
+    margin-top: 14px;
+    font-size: 12pt;
+    font-weight: 700;
+  }
+
+  .vykaz .vykaz-pata {
+    margin-top: 12px;
+    font-size: 9pt;
+    color: #555;
+  }
+}
+
+/* ===== Stredne široká obrazovka: Prehľad pod sebou, dlaždice po dvoch ===== */
+@media (max-width: 1100px) {
+  .prehlad-mriezka {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  /* Pravý stĺpec sa "rozpustí" do mriežky, aby sa Spustiť stopky dali dať nad formulár
+     (order: -1 = v poradí úplne prvé) */
+  .prehlad-pravy-stlpec {
+    display: contents;
+  }
+
+  #rychly-start {
+    order: -1;
+  }
+
+  .dlazdice {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+/* ===== Užšia obrazovka (tablet, mobil): namiesto bočného panela lišta dole ===== */
+@media (max-width: 760px) {
+  .appka {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .panel {
+    display: none;
+  }
+
+  .obal {
+    padding: 24px 16px 104px; /* dole miesto pre lištu */
+  }
+
+  .mriezka-nastaveni {
+    grid-template-columns: 1fr;
+  }
+
+  .spodna-nav {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 10;
+    background: var(--karta);
+    border-top: 1px solid var(--okraj);
+    /* env(safe-area-inset-bottom) = miesto pre "čiaru" dole na iPhone */
+    padding: 6px 4px calc(6px + env(safe-area-inset-bottom));
+  }
+
+  .spodna-nav button {
+    font: inherit;
+    font-size: 0.68rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    border: 0;
+    background: none;
+    color: var(--text-slabsi);
+    padding: 6px 0;
+    cursor: pointer;
+  }
+
+  .spodna-nav button[aria-current="page"] {
+    color: var(--hlavna);
+    font-weight: 600;
+  }
+
+  /* Bodka (stará záloha) v pravom hornom rohu ikony */
+  .spodna-nav button {
+    position: relative;
+  }
+
+  .spodna-nav button.ma-bodku::after {
+    content: "";
+    position: absolute;
+    top: 5px;
+    left: calc(50% + 7px);
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--bodka-upozornenia);
+  }
+
+  /* Správa sa ukáže nad lištou, nie cez ňu */
+  .sprava {
+    bottom: calc(76px + env(safe-area-inset-bottom));
+  }
+}
+
+/* ===== Mobil (užšie ako 600 px) ===== */
+@media (max-width: 600px) {
+  .karta {
+    padding: 18px;
+  }
+
+  #formular,
+  .formular-sadzby {
+    grid-template-columns: 1fr;
+  }
+
+  /* Dlaždice súčtu: dve vedľa seba, tretia pod nimi */
+  .sucet-riadok {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  /* menšie číslo, aby sa "182 h 4 min" zmestilo do polovice šírky */
+  .sucet-hodnota {
+    font-size: 1.25rem;
+  }
+
+  .stopky-cas {
+    font-size: 2rem;
+  }
+
+  .dlazdice {
+    gap: 10px;
+  }
+
+  .dlazdica {
+    padding: 12px 14px;
+  }
+
+  .dlazdica-hodnota {
+    font-size: 1.25rem;
+  }
+
+  /* Časová os na mobile: dátum nad textom */
+  .casova-os li {
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .casova-os .kedy {
+    flex-basis: auto;
+  }
+
+  /* Na mobile sú tlačidlá pri sadzbe a projekte pod názvom, nie vedľa, a môžu sa zalomiť */
+  .zoznam-sadzieb li {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .zoznam-sadzieb .akcie {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    white-space: normal;
+  }
+
+  /* Tlačidlá v okne: cez celú šírku, hlavné hore */
+  .okno-tlacidla {
+    flex-direction: column-reverse;
+  }
+
+  /* Dane: dlaždice pod sebou, odhad príjmu pod nadpisom */
+  .dlazdice.dlazdice-dane {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .odhad-prijmu {
+    text-align: left;
+  }
+
+  /* Prázdny stav na mobile o niečo menší */
+  .prazdny-stav {
+    padding: 20px 8px;
+  }
+
+  /* Výpočet daní je krátka tabuľka "popis – suma", na mobile ostane tabuľkou */
+  .tabulka-dane tr {
+    display: table-row;
+    padding: 0;
+  }
+
+  .tabulka-dane td {
+    display: table-cell;
+    padding: 8px 4px;
+    border-bottom: 1px solid var(--okraj);
+  }
+
+  .tabulka-dane td::before {
+    content: none;
+  }
+
+  /* Na mobile má rámček so záznamami výšku asi 2/3 obrazovky (vh = výška okna) */
+  .tabulka-obal {
+    max-height: 65vh;
+  }
+
+  /* Tabuľka sa zmení na "kartičky": každý záznam je jeden blok */
+  thead {
+    display: none;
+  }
+
+  tr {
+    display: block;
+    padding: 10px 8px;
+    border-bottom: 1px solid var(--okraj);
+  }
+
+  td {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 4px 0;
+    border: none;
+  }
+
+  /* Názov stĺpca sa zobrazí vľavo (berie sa z atribútu data-nazov) */
+  td::before {
+    content: attr(data-nazov);
+    color: var(--text-slabsi);
+    font-size: 0.82rem;
+  }
+
+  /* Tlačidlá Upraviť / Zmazať vpravo, bez popisu */
+  td.akcie {
+    justify-content: flex-end;
+    padding-top: 8px;
+  }
+
+  td.akcie::before {
+    content: none;
+  }
+}

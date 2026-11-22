@@ -1,0 +1,19 @@
+# macOS
+.DS_Store
+
+# Zálohy dát z appky (osobné údaje – necommitovať)
+zaloha*.json
+*-zaloha*.json
+*-backup.json
+zivnost-data.json
+
+# Kópia úložiska prehliadača (osobné dáta – nikdy necommitovať)
+leveldb/
+
+# Premenné prostredia (appka ich nepoužíva, ale pre istotu)
+.env
+.env.*
+
+# Lokálne nastavenia a súkromné poznámky pre Claude Code
+.claude/settings.local.json
+CLAUDE.local.md

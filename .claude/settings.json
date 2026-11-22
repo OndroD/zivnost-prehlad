@@ -1,0 +1,33 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git status *)",
+      "Bash(git diff *)",
+      "Bash(git log *)",
+      "Bash(open index.html)",
+      "WebFetch(domain:socpoist.sk)",
+      "WebFetch(domain:www.socpoist.sk)",
+      "WebFetch(domain:financnasprava.sk)",
+      "WebFetch(domain:www.financnasprava.sk)",
+      "WebFetch(domain:podpora.financnasprava.sk)",
+      "WebFetch(domain:slov-lex.sk)",
+      "WebFetch(domain:www.slov-lex.sk)",
+      "WebFetch(domain:vszp.sk)",
+      "WebFetch(domain:www.vszp.sk)",
+      "WebFetch(domain:dovera.sk)",
+      "WebFetch(domain:www.dovera.sk)",
+      "WebFetch(domain:union.sk)",
+      "WebFetch(domain:www.union.sk)",
+      "WebFetch(domain:slovak.statistics.sk)",
+      "WebFetch(domain:employment.gov.sk)",
+      "WebFetch(domain:www.employment.gov.sk)"
+    ],
+    "deny": [
+      "Bash(rm -rf *)",
+      "Bash(sudo *)",
+      "Bash(git push *)",
+      "Bash(curl *)",
+      "Bash(wget *)"
+    ]
+  }
+}
